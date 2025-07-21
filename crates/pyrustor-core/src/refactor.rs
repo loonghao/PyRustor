@@ -1,7 +1,5 @@
 //! Code refactoring and transformation utilities
 
-#![allow(clippy::uninlined_format_args)]
-
 use crate::{ast::PythonAst, error::Result, formatter::Formatter, PyRustorError};
 use ruff_python_ast::{Identifier, Stmt};
 use ruff_text_size::TextRange;

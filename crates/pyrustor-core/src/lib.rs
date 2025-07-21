@@ -1,6 +1,8 @@
 //! PyRustor Core Library
 //!
 //! A high-performance Python code parsing and refactoring library written in Rust.
+
+#![allow(clippy::uninlined_format_args)]
 //! This library provides comprehensive tools for analyzing, modifying, and modernizing
 //! Python codebases while preserving original formatting and style.
 //!

@@ -1,5 +1,7 @@
 //! Code refactoring and transformation utilities
 
+#![allow(clippy::uninlined_format_args)]
+
 use crate::{ast::PythonAst, error::Result, formatter::Formatter, PyRustorError};
 use ruff_python_ast::{Identifier, Stmt};
 use ruff_text_size::TextRange;
@@ -106,7 +108,7 @@ impl Refactor {
                             old_name: old_name.to_string(),
                             new_name: new_name.to_string(),
                         },
-                        description: format!("Renamed function '{}' to '{}'", old_name, new_name),
+                        description: format!("Renamed function '{old_name}' to '{new_name}'"),
                         location: Some(SourceLocation { line: 0, column: 0 }), // TODO: Get actual location
                     });
                 }
@@ -115,8 +117,7 @@ impl Refactor {
 
         if !found {
             return Err(PyRustorError::refactor_error(format!(
-                "Function '{}' not found",
-                old_name
+                "Function '{old_name}' not found"
             )));
         }
 
@@ -155,7 +156,7 @@ impl Refactor {
                             old_name: old_name.to_string(),
                             new_name: new_name.to_string(),
                         },
-                        description: format!("Renamed class '{}' to '{}'", old_name, new_name),
+                        description: format!("Renamed class '{old_name}' to '{new_name}'"),
                         location: Some(SourceLocation { line: 0, column: 0 }),
                     });
                 }
@@ -164,8 +165,7 @@ impl Refactor {
 
         if !found {
             return Err(PyRustorError::refactor_error(format!(
-                "Class '{}' not found",
-                old_name
+                "Class '{old_name}' not found"
             )));
         }
 
@@ -222,7 +222,7 @@ impl Refactor {
                     old_import: old_module.to_string(),
                     new_import: new_module.to_string(),
                 },
-                description: format!("Replaced import '{}' with '{}'", old_module, new_module),
+                description: format!("Replaced import '{old_module}' with '{new_module}'"),
                 location: None,
             });
         }
@@ -248,11 +248,10 @@ impl Refactor {
             self.changes.push(RefactorChange {
                 change_type: ChangeType::SyntaxModernized {
                     description: format!(
-                        "Applied {} modern Python syntax improvements",
-                        changes_made
+                        "Applied {changes_made} modern Python syntax improvements"
                     ),
                 },
-                description: format!("Modernized Python syntax ({} changes)", changes_made),
+                description: format!("Modernized Python syntax ({changes_made} changes)"),
                 location: None,
             });
         }
@@ -306,11 +305,10 @@ impl Refactor {
             self.changes.push(RefactorChange {
                 change_type: ChangeType::Custom {
                     description: format!(
-                        "Added type hint '{}' to function '{}'",
-                        type_hint, func_name
+                        "Added type hint '{type_hint}' to function '{func_name}'"
                     ),
                 },
-                description: format!("Added type hints to function '{}'", func_name),
+                description: format!("Added type hints to function '{func_name}'"),
                 location: None,
             });
         }
@@ -364,9 +362,9 @@ impl Refactor {
         if removed_count > 0 {
             self.changes.push(RefactorChange {
                 change_type: ChangeType::Custom {
-                    description: format!("Removed {} unused imports", removed_count),
+                    description: format!("Removed {removed_count} unused imports"),
                 },
-                description: format!("Removed {} unused imports", removed_count),
+                description: format!("Removed {removed_count} unused imports"),
                 location: None,
             });
         }
@@ -410,11 +408,10 @@ impl Refactor {
         self.changes.push(RefactorChange {
             change_type: ChangeType::Custom {
                 description: format!(
-                    "Extracted method '{}' from lines {}-{}",
-                    method_name, start_line, end_line
+                    "Extracted method '{method_name}' from lines {start_line}-{end_line}"
                 ),
             },
-            description: format!("Extracted method '{}'", method_name),
+            description: format!("Extracted method '{method_name}'"),
             location: Some(SourceLocation {
                 line: start_line,
                 column: 0,
@@ -435,9 +432,9 @@ impl Refactor {
         // For now, this is a placeholder
         self.changes.push(RefactorChange {
             change_type: ChangeType::Custom {
-                description: format!("Inlined method '{}'", method_name),
+                description: format!("Inlined method '{method_name}'"),
             },
-            description: format!("Inlined method '{}'", method_name),
+            description: format!("Inlined method '{method_name}'"),
             location: None,
         });
 
@@ -496,8 +493,7 @@ impl Refactor {
         self.changes.push(RefactorChange {
             change_type: ChangeType::SyntaxModernized {
                 description: format!(
-                    "Modernized pkg_resources version detection to use {}::{}",
-                    target_module, target_function
+                    "Modernized pkg_resources version detection to use {target_module}::{target_function}"
                 ),
             },
             description: "Modernized version detection pattern".to_string(),
@@ -509,13 +505,11 @@ impl Refactor {
             self.changes.push(RefactorChange {
                 change_type: ChangeType::Custom {
                     description: format!(
-                        "Applied {} pkg_resources modernization changes",
-                        changes_made
+                        "Applied {changes_made} pkg_resources modernization changes"
                     ),
                 },
                 description: format!(
-                    "Completed pkg_resources modernization ({} changes)",
-                    changes_made
+                    "Completed pkg_resources modernization ({changes_made} changes)"
                 ),
                 location: None,
             });

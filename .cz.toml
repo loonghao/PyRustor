@@ -1,0 +1,31 @@
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "v$version"
+version_scheme = "pep440"
+version_provider = "pep621"
+update_changelog_on_bump = true
+major_version_zero = true
+
+[tool.commitizen.settings]
+# Files to update version in
+version_files = [
+    "pyproject.toml:version",
+    "Cargo.toml:version",
+    "crates/pyrustor-core/Cargo.toml:version", 
+    "crates/pyrustor-python/Cargo.toml:version",
+    "python/pyrustor/__init__.py:__version__",
+]
+
+# Changelog configuration
+[tool.commitizen.changelog]
+file_name = "CHANGELOG.md"
+unreleased_version = "Unreleased"
+order_by_scope = true
+template = "CHANGELOG.md.j2"
+start_rev = "0.1.0"
+
+# Bump configuration
+[tool.commitizen.bump]
+changelog = true
+tag = true
+push = false # Don't auto-push, let CI handle it

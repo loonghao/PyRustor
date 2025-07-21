@@ -1,0 +1,52 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "pyrustor"
+description = "A Python code parsing and refactoring tool written in Rust"
+authors = [
+    {name = "Hal", email = "hal.long@outlook.com"},
+]
+license = {text = "MIT"}
+readme = "../../README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: Linguistic",
+]
+keywords = ["python", "parser", "refactoring", "ast", "code-analysis"]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/loonghao/PyRustor"
+Repository = "https://github.com/loonghao/PyRustor"
+Documentation = "https://docs.rs/pyrustor"
+"Bug Tracker" = "https://github.com/loonghao/PyRustor/issues"
+
+[tool.maturin]
+python-source = "../../python"
+module-name = "pyrustor._pyrustor"
+features = ["pyo3/extension-module"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "YTT", "ANN", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
+ignore = ["ANN101", "ANN102", "COM812", "ISC001"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004", "SLF001"]

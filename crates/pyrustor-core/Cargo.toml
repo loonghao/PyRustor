@@ -1,0 +1,36 @@
+[package]
+name = "pyrustor-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+description = "Core library for Python code parsing and refactoring"
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+# Core parsing dependencies
+ruff_python_parser.workspace = true
+ruff_python_ast.workspace = true
+ruff_text_size.workspace = true
+ruff_source_file.workspace = true
+
+# Serialization and utilities
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+
+# File system utilities
+walkdir = "2.4"
+
+[dev-dependencies]
+tokio.workspace = true
+tempfile = "3.8"
+
+[lib]
+name = "pyrustor_core"
+crate-type = ["lib"]

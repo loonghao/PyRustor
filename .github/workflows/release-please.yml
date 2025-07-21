@@ -1,0 +1,37 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      releases_created: ${{ steps.release.outputs.releases_created }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # If a release was created, trigger the release workflow
+  trigger-release:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      actions: write

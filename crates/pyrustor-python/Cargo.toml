@@ -33,4 +33,4 @@ default = []
 abi3 = ["pyo3/abi3-py38"]
 
 [build-dependencies]
-pyo3-build-config = "0.22"
+pyo3-build-config = "0.25"

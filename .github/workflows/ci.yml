@@ -44,14 +44,14 @@ jobs:
       
       - name: Generate type stubs
         run: |
-          uv run pyo3-stubgen pyrustor_python._pyrustor python/pyrustor/
+          uv run pyo3-stubgen pyrustor._pyrustor python/pyrustor/
           echo "✅ Type stubs generated successfully"
       
       - name: Run Rust tests
         run: cargo test --workspace --exclude pyrustor-python
       
       - name: Run Python tests
-        run: uv run python -m pytest tests/ -v --tb=short
+        run: uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
         env:
           PYTHONUNBUFFERED: 1
       
@@ -107,3 +107,32 @@ jobs:
       
       - name: Check documentation
         run: cargo doc --no-deps --document-private-items
+
+  # Benchmark tests
+  benchmark:
+    name: Benchmark Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Build extension (release mode)
+        run: uv run maturin develop --release
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Run benchmark tests
+        run: uv run python -m pytest tests/ -v -m "benchmark"
+        env:
+          PYTHONUNBUFFERED: 1

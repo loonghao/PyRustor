@@ -126,7 +126,12 @@ impl Refactor {
     }
 
     /// Rename a function throughout the codebase with optional formatting
-    pub fn rename_function_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> Result<()> {
+    pub fn rename_function_with_format(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        apply_formatting: bool,
+    ) -> Result<()> {
         self.rename_function(old_name, new_name)?;
         if apply_formatting {
             self.format_code()?;
@@ -168,7 +173,12 @@ impl Refactor {
     }
 
     /// Rename a class throughout the codebase with optional formatting
-    pub fn rename_class_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> Result<()> {
+    pub fn rename_class_with_format(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        apply_formatting: bool,
+    ) -> Result<()> {
         self.rename_class(old_name, new_name)?;
         if apply_formatting {
             self.format_code()?;
@@ -334,8 +344,6 @@ impl Refactor {
         }
         Ok(())
     }
-
-
 
     /// Remove unused imports from the module
     pub fn remove_unused_imports(&mut self) -> Result<()> {
@@ -586,8 +594,6 @@ impl Refactor {
 
         Ok(())
     }
-
-
 
     /// Format the code using Ruff's formatter
     pub fn format_code(&mut self) -> Result<()> {

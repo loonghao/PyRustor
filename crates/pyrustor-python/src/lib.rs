@@ -220,8 +220,16 @@ impl Refactor {
     }
 
     /// Rename function with optional formatting
-    fn rename_function_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> PyResult<()> {
-        match self.inner.rename_function_with_format(old_name, new_name, apply_formatting) {
+    fn rename_function_with_format(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        apply_formatting: bool,
+    ) -> PyResult<()> {
+        match self
+            .inner
+            .rename_function_with_format(old_name, new_name, apply_formatting)
+        {
             Ok(()) => Ok(()),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Refactor error: {}",
@@ -231,8 +239,16 @@ impl Refactor {
     }
 
     /// Rename class with optional formatting
-    fn rename_class_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> PyResult<()> {
-        match self.inner.rename_class_with_format(old_name, new_name, apply_formatting) {
+    fn rename_class_with_format(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        apply_formatting: bool,
+    ) -> PyResult<()> {
+        match self
+            .inner
+            .rename_class_with_format(old_name, new_name, apply_formatting)
+        {
             Ok(()) => Ok(()),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Refactor error: {}",
@@ -251,8 +267,6 @@ impl Refactor {
             ))),
         }
     }
-
-
 
     /// Format code using Ruff's formatter
     fn format_code(&mut self) -> PyResult<()> {

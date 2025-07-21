@@ -33,7 +33,6 @@ jobs:
           args: --release --out dist --find-interpreter --features abi3
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
           manylinux: auto
-          working-directory: crates/pyrustor-python
       
       - name: Install built wheel
         if: matrix.target == 'x86_64'
@@ -68,7 +67,6 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist --find-interpreter --features abi3
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          working-directory: crates/pyrustor-python
       
       - name: Install built wheel
         if: matrix.target == 'x64'
@@ -103,7 +101,6 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist --find-interpreter --features abi3
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          working-directory: crates/pyrustor-python
       
       - name: Install built wheel
         if: matrix.target == 'x86_64'
@@ -129,7 +126,6 @@ jobs:
         with:
           command: sdist
           args: --out dist
-          working-directory: crates/pyrustor-python
       
       - name: Upload sdist
         uses: actions/upload-artifact@v4

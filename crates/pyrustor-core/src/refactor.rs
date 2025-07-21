@@ -304,9 +304,7 @@ impl Refactor {
         for (func_name, type_hint) in hints {
             self.changes.push(RefactorChange {
                 change_type: ChangeType::Custom {
-                    description: format!(
-                        "Added type hint '{type_hint}' to function '{func_name}'"
-                    ),
+                    description: format!("Added type hint '{type_hint}' to function '{func_name}'"),
                 },
                 description: format!("Added type hints to function '{func_name}'"),
                 location: None,

@@ -13,8 +13,10 @@ pub struct PythonAst {
     /// Original source code for preserving formatting
     source: String,
     /// Whether comments are preserved
+    #[allow(dead_code)]
     preserve_comments: bool,
     /// Whether formatting is preserved
+    #[allow(dead_code)]
     preserve_formatting: bool,
 }
 

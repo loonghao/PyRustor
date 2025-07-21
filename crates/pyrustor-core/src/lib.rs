@@ -51,7 +51,9 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::const_is_empty)]
     fn test_version() {
+        // VERSION is a compile-time constant, so this check is always true
         assert!(!VERSION.is_empty());
     }
 

@@ -134,7 +134,7 @@ impl Parser {
         if recursive {
             for entry in walkdir::WalkDir::new(dir_path) {
                 let entry = entry?;
-                if entry.path().extension().map_or(false, |ext| ext == "py") {
+                if entry.path().extension().is_some_and(|ext| ext == "py") {
                     match self.parse_file(entry.path()) {
                         Ok(ast) => {
                             results.push((entry.path().to_string_lossy().to_string(), ast));
@@ -148,7 +148,7 @@ impl Parser {
         } else {
             for entry in std::fs::read_dir(dir_path)? {
                 let entry = entry?;
-                if entry.path().extension().map_or(false, |ext| ext == "py") {
+                if entry.path().extension().is_some_and(|ext| ext == "py") {
                     match self.parse_file(&entry.path()) {
                         Ok(ast) => {
                             results.push((entry.path().to_string_lossy().to_string(), ast));

@@ -1,6 +1,5 @@
 //! Error types for PyRustor Core
 
-
 use thiserror::Error;
 
 /// Result type alias for PyRustor operations

@@ -160,6 +160,8 @@ impl Refactor {
 
     /// Replace import statements
     pub fn replace_import(&mut self, old_module: &str, new_module: &str) -> Result<()> {
+        // Import statements will be used when implementing actual AST transformations
+        #[allow(unused_imports)]
         use ruff_python_ast::{Alias, StmtImport, StmtImportFrom};
 
         let mut found = false;
@@ -314,7 +316,7 @@ impl Refactor {
         // 2. Check which imports are actually referenced
         // 3. Remove unused import statements
 
-        let mut removed_count = 0;
+        let removed_count = 0;
 
         // For now, this is a placeholder that doesn't actually remove anything
         // In a real implementation, we would need to:
@@ -436,7 +438,7 @@ impl Refactor {
         let has_pkg_resources = imports.iter().any(|imp| {
             imp.from_module
                 .as_ref()
-                .map_or(false, |m| m == "pkg_resources")
+                .is_some_and(|m| m == "pkg_resources")
         });
 
         if !has_pkg_resources {
@@ -461,7 +463,7 @@ impl Refactor {
                     target_module, target_function
                 ),
             },
-            description: format!("Modernized version detection pattern"),
+            description: "Modernized version detection pattern".to_string(),
             location: None,
         });
         changes_made += 1;
@@ -492,7 +494,7 @@ impl Refactor {
         // 2. .format() -> f-strings (where appropriate)
         // 3. String concatenation -> f-strings
 
-        let mut changes_made = 0;
+        let changes_made = 0;
 
         // Placeholder implementation
         // In a real implementation, this would:
@@ -506,7 +508,7 @@ impl Refactor {
                 change_type: ChangeType::SyntaxModernized {
                     description: format!("Modernized {} string formatting patterns", changes_made),
                 },
-                description: format!("Modernized string formatting"),
+                description: "Modernized string formatting".to_string(),
                 location: None,
             });
         }
@@ -534,7 +536,7 @@ impl Refactor {
             let imports = self.ast.imports();
             let has_old_import = imports.iter().any(|imp| {
                 imp.module == old_module
-                    || imp.from_module.as_ref().map_or(false, |m| m == old_module)
+                    || imp.from_module.as_ref().is_some_and(|m| m == old_module)
             });
 
             if has_old_import {
@@ -548,7 +550,7 @@ impl Refactor {
                 change_type: ChangeType::SyntaxModernized {
                     description: format!("Modernized {} deprecated imports", changes_made),
                 },
-                description: format!("Modernized deprecated imports"),
+                description: "Modernized deprecated imports".to_string(),
                 location: None,
             });
         }

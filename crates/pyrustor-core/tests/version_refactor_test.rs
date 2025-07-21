@@ -36,7 +36,7 @@ except DistributionNotFound:
         .filter(|imp| {
             imp.from_module
                 .as_ref()
-                .map_or(false, |m| m == "pkg_resources")
+                .is_some_and(|m| m == "pkg_resources")
         })
         .collect();
 
@@ -120,7 +120,7 @@ except DistributionNotFound:
 #[test]
 fn test_version_pattern_detection() -> Result<()> {
     // Test various version detection patterns
-    let test_cases = vec![
+    let test_cases = [
         // Case 1: Basic pkg_resources pattern
         r#"
 from pkg_resources import get_distribution, DistributionNotFound
@@ -161,12 +161,12 @@ except DistributionNotFound:
             .filter(|imp| {
                 imp.from_module
                     .as_ref()
-                    .map_or(false, |m| m == "pkg_resources")
+                    .is_some_and(|m| m == "pkg_resources")
             })
             .collect();
 
         assert!(
-            pkg_imports.len() >= 1,
+            !pkg_imports.is_empty(),
             "Case {} should have pkg_resources imports",
             i + 1
         );
@@ -178,7 +178,7 @@ except DistributionNotFound:
         refactor.replace_import("pkg_resources", "xxx_pyharmony")?;
 
         let changes = refactor.changes();
-        assert!(changes.len() >= 1, "Case {} should have changes", i + 1);
+        assert!(!changes.is_empty(), "Case {} should have changes", i + 1);
     }
 
     Ok(())
@@ -272,7 +272,7 @@ def main_function():
         println!("  Applied {} changes to {}", changes.len(), filename);
 
         // Each file should have at least one change
-        assert!(changes.len() >= 1);
+        assert!(!changes.is_empty());
     }
 
     Ok(())
@@ -349,7 +349,7 @@ import StringIO
     }
 
     // Should have changes for the deprecated imports
-    assert!(changes.len() >= 1);
+    assert!(!changes.is_empty());
 
     // Should mention deprecated imports
     let has_deprecated_change = changes

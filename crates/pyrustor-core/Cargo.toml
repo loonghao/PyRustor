@@ -18,6 +18,10 @@ ruff_python_ast.workspace = true
 ruff_text_size.workspace = true
 ruff_source_file.workspace = true
 
+# Formatting dependencies
+ruff_python_formatter.workspace = true
+ruff_formatter.workspace = true
+
 # Serialization and utilities
 serde.workspace = true
 serde_json.workspace = true

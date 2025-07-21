@@ -15,8 +15,8 @@ A **blazingly fast** Python code parsing and refactoring tool written in Rust wi
 
 ### 🌟 **Core Advantages**
 
-- **⚡ Superior Performance**: High-performance Rust implementation
-- **🔄 Python AST Parsing**: Parse Python code into AST for analysis
+- **⚡ Superior Performance**: Built on Ruff's blazing-fast Python parser - 10-100x faster than traditional Python tools
+- **🔄 Python AST Parsing**: Parse Python code into AST for analysis using Ruff's proven parsing engine
 - **🛠️ Code Refactoring**: Rename functions, classes, modernize syntax
 - **🧵 Safe Concurrency**: Built with Rust's fearless concurrency
 - **🐍 Python Bindings**: Easy-to-use Python API
@@ -161,6 +161,45 @@ print("Changes made:")
 print(refactor.change_summary())
 ```
 
+### Code Simplification for Testing
+
+```python
+import pyrustor
+
+# Convert complex production code to test-friendly version
+production_code = '''
+from __future__ import absolute_import
+from rez_builder import PipFromDownloadBuilder
+
+SOURCES = {
+    "downloads": [
+        {
+            "file_name": "shiboken6-6.5.0-cp37-abi3-win_amd64.whl",
+            "checksum": {
+                "sha256": "aee9708517821aaef547c83d689bf524d6f217d47232cb313d9af9e630215eed"
+            },
+        }
+    ]
+}
+
+if __name__ == "__main__":
+    BUILDER = PipFromDownloadBuilder(SOURCES)
+    BUILDER.build()
+'''
+
+parser = pyrustor.Parser()
+ast = parser.parse_string(production_code)
+refactor = pyrustor.Refactor(ast)
+
+# Convert to test-friendly version with formatting
+refactor.convert_to_test_code()
+simplified_code = refactor.refactor_and_format()
+
+print("Simplified test code:")
+print(simplified_code)
+# Output: Clean, formatted code with mock data
+```
+
 ## 📚 API Reference
 
 ### Parser Class
@@ -209,8 +248,12 @@ refactor.replace_import("old_module", "new_module")
 refactor.modernize_syntax()
 refactor.modernize_imports()
 
-# Get results
-refactored_code = refactor.to_string()
+# Code simplification for testing
+refactor.convert_to_test_code()
+refactor.replace_complex_data_with_mocks()
+
+# Get results with formatting
+refactored_code = refactor.refactor_and_format()
 changes = refactor.change_summary()
 
 # Save to file
@@ -261,6 +304,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [ruff](https://github.com/astral-sh/ruff) for Python AST parsing
+- [**Ruff**](https://github.com/astral-sh/ruff) - PyRustor is built on Ruff's high-performance Python AST parsing engine (`ruff_python_ast`). Ruff is an extremely fast Python linter and code formatter written in Rust, developed by [Astral](https://astral.sh). We leverage Ruff's proven parsing technology to deliver blazing-fast Python code analysis and refactoring capabilities.
 - [PyO3](https://github.com/PyO3/pyo3) for excellent Python-Rust bindings
 - [maturin](https://github.com/PyO3/maturin) for seamless Python package building

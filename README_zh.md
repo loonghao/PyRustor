@@ -15,8 +15,8 @@
 
 ### 🌟 **核心优势**
 
-- **⚡ 卓越性能**: 高性能 Rust 实现
-- **🔄 Python AST 解析**: 将 Python 代码解析为 AST 进行分析
+- **⚡ 卓越性能**: 基于 Ruff 的极速 Python 解析器构建 - 比传统 Python 工具快 10-100 倍
+- **🔄 Python AST 解析**: 使用 Ruff 经过验证的解析引擎将 Python 代码解析为 AST 进行分析
 - **🛠️ 代码重构**: 重命名函数、类，现代化语法
 - **🧵 安全并发**: 基于 Rust 的无畏并发构建
 - **🐍 Python 绑定**: 易于使用的 Python API
@@ -161,6 +161,45 @@ print("所做的更改:")
 print(refactor.change_summary())
 ```
 
+### 代码简化用于测试
+
+```python
+import pyrustor
+
+# 将复杂的生产代码转换为测试友好版本
+production_code = '''
+from __future__ import absolute_import
+from rez_builder import PipFromDownloadBuilder
+
+SOURCES = {
+    "downloads": [
+        {
+            "file_name": "shiboken6-6.5.0-cp37-abi3-win_amd64.whl",
+            "checksum": {
+                "sha256": "aee9708517821aaef547c83d689bf524d6f217d47232cb313d9af9e630215eed"
+            },
+        }
+    ]
+}
+
+if __name__ == "__main__":
+    BUILDER = PipFromDownloadBuilder(SOURCES)
+    BUILDER.build()
+'''
+
+parser = pyrustor.Parser()
+ast = parser.parse_string(production_code)
+refactor = pyrustor.Refactor(ast)
+
+# 转换为测试友好版本并格式化
+refactor.convert_to_test_code()
+simplified_code = refactor.refactor_and_format()
+
+print("简化的测试代码:")
+print(simplified_code)
+# 输出: 干净、格式化的代码，包含模拟数据
+```
+
 ## 📚 API 参考
 
 ### Parser 类
@@ -261,6 +300,6 @@ just --list  # 显示所有可用命令
 
 ## 🙏 致谢
 
-- [ruff](https://github.com/astral-sh/ruff) 提供 Python AST 解析
+- [**Ruff**](https://github.com/astral-sh/ruff) - PyRustor 基于 Ruff 的高性能 Python AST 解析引擎 (`ruff_python_ast`) 构建。Ruff 是由 [Astral](https://astral.sh) 开发的用 Rust 编写的极速 Python 代码检查器和格式化工具。我们利用 Ruff 经过验证的解析技术来提供极速的 Python 代码分析和重构能力。
 - [PyO3](https://github.com/PyO3/pyo3) 提供优秀的 Python-Rust 绑定
 - [maturin](https://github.com/PyO3/maturin) 提供无缝的 Python 包构建

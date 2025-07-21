@@ -180,3 +180,5 @@ Desktop.ini
 
 
 .ruff_cache/
+.augment/
+

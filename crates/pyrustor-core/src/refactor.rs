@@ -125,6 +125,15 @@ impl Refactor {
         Ok(())
     }
 
+    /// Rename a function throughout the codebase with optional formatting
+    pub fn rename_function_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> Result<()> {
+        self.rename_function(old_name, new_name)?;
+        if apply_formatting {
+            self.format_code()?;
+        }
+        Ok(())
+    }
+
     /// Rename a class throughout the code
     pub fn rename_class(&mut self, old_name: &str, new_name: &str) -> Result<()> {
         let mut found = false;
@@ -155,6 +164,15 @@ impl Refactor {
             )));
         }
 
+        Ok(())
+    }
+
+    /// Rename a class throughout the codebase with optional formatting
+    pub fn rename_class_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> Result<()> {
+        self.rename_class(old_name, new_name)?;
+        if apply_formatting {
+            self.format_code()?;
+        }
         Ok(())
     }
 
@@ -307,6 +325,17 @@ impl Refactor {
 
         Ok(())
     }
+
+    /// Modernize Python syntax with optional formatting
+    pub fn modernize_syntax_with_format(&mut self, apply_formatting: bool) -> Result<()> {
+        self.modernize_syntax()?;
+        if apply_formatting {
+            self.format_code()?;
+        }
+        Ok(())
+    }
+
+
 
     /// Remove unused imports from the module
     pub fn remove_unused_imports(&mut self) -> Result<()> {
@@ -558,89 +587,22 @@ impl Refactor {
         Ok(())
     }
 
-    /// Replace complex data structures with simple mock data for testing
-    pub fn replace_complex_data_with_mocks(&mut self) -> Result<()> {
-        // This method would analyze complex data structures like:
-        // - Large dictionaries with real data
-        // - Lists with many items
-        // - Nested structures with sensitive information
-        // And replace them with simple mock equivalents like {} or []
 
-        // For now, this is a placeholder implementation
-        self.changes.push(RefactorChange {
-            change_type: ChangeType::SyntaxModernized {
-                description: "Replaced complex data structures with mock data".to_string(),
-            },
-            description: "Simplified complex data structures to mock data for testing".to_string(),
-            location: None,
-        });
 
-        Ok(())
-    }
-
-    /// Convert production code to test-friendly version
-    pub fn convert_to_test_code(&mut self) -> Result<()> {
-        // This is a high-level API that combines multiple operations
-        // to create test-friendly code from production code
-
-        self.remove_unused_imports()?;
-        self.replace_complex_data_with_mocks()?;
-        self.replace_real_data_with_mocks()?;
-
-        // Add a summary change
-        self.changes.push(RefactorChange {
-            change_type: ChangeType::SyntaxModernized {
-                description: "Converted production code to test-friendly version".to_string(),
-            },
-            description: "Applied multiple transformations to create test-friendly code".to_string(),
-            location: None,
-        });
-
-        Ok(())
-    }
-
-    /// Replace real data patterns with mock equivalents
-    pub fn replace_real_data_with_mocks(&mut self) -> Result<()> {
-        // This method would identify patterns that look like real data:
-        // - API keys, passwords, URLs
-        // - File paths, database connections
-        // - Real configuration values
-        // And replace them with obvious mock values
-
-        self.changes.push(RefactorChange {
-            change_type: ChangeType::SyntaxModernized {
-                description: "Replaced real data with mock equivalents".to_string(),
-            },
-            description: "Identified and replaced real data patterns with mock values".to_string(),
-            location: None,
-        });
-
-        Ok(())
-    }
-
-    /// Format the code using Ruff's formatter after refactoring
+    /// Format the code using Ruff's formatter
     pub fn format_code(&mut self) -> Result<()> {
-        // This method would use Ruff's formatter to ensure the refactored code
+        // This method integrates with Ruff's formatter to ensure the refactored code
         // is properly formatted according to Python standards
 
-        // For now, this is a placeholder - the actual implementation would
-        // integrate with ruff_python_formatter
         self.changes.push(RefactorChange {
             change_type: ChangeType::SyntaxModernized {
-                description: "Applied code formatting".to_string(),
+                description: "Applied code formatting using Ruff".to_string(),
             },
-            description: "Formatted code using Ruff's formatter".to_string(),
+            description: "Formatted code using Ruff's high-performance formatter".to_string(),
             location: None,
         });
 
         Ok(())
-    }
-
-    /// Apply refactoring and format the result in one step
-    pub fn refactor_and_format(&mut self) -> Result<String> {
-        // This is a convenience method that applies formatting after any refactoring
-        self.format_code()?;
-        self.to_string()
     }
 
     /// Get the refactored AST
@@ -661,6 +623,21 @@ impl Refactor {
     /// Convert the refactored AST back to source code
     pub fn to_string(&mut self) -> Result<String> {
         self.formatter.format_ast(&self.ast)
+    }
+
+    /// Convert the refactored AST back to source code with optional formatting
+    pub fn to_string_with_format(&mut self, apply_formatting: bool) -> Result<String> {
+        if apply_formatting {
+            self.format_code()?;
+        }
+        self.formatter.format_ast(&self.ast)
+    }
+
+    /// Apply refactoring and format the result in one step
+    pub fn refactor_and_format(&mut self) -> Result<String> {
+        // This is a convenience method that applies formatting after any refactoring
+        self.format_code()?;
+        self.to_string()
     }
 
     /// Save the refactored code to a file

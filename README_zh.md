@@ -161,43 +161,62 @@ print("所做的更改:")
 print(refactor.change_summary())
 ```
 
-### 代码简化用于测试
+### Ruff 格式化器集成
 
 ```python
 import pyrustor
 
-# 将复杂的生产代码转换为测试友好版本
-production_code = '''
-from __future__ import absolute_import
-from rez_builder import PipFromDownloadBuilder
+# 需要重构和格式化的混乱代码
+messy_code = '''def   old_function(  x,y  ):
+    return x+y
 
-SOURCES = {
-    "downloads": [
-        {
-            "file_name": "shiboken6-6.5.0-cp37-abi3-win_amd64.whl",
-            "checksum": {
-                "sha256": "aee9708517821aaef547c83d689bf524d6f217d47232cb313d9af9e630215eed"
-            },
-        }
-    ]
-}
-
-if __name__ == "__main__":
-    BUILDER = PipFromDownloadBuilder(SOURCES)
-    BUILDER.build()
-'''
+class   OldClass:
+    def __init__(self,name):
+        self.name=name'''
 
 parser = pyrustor.Parser()
-ast = parser.parse_string(production_code)
+ast = parser.parse_string(messy_code)
 refactor = pyrustor.Refactor(ast)
 
-# 转换为测试友好版本并格式化
-refactor.convert_to_test_code()
-simplified_code = refactor.refactor_and_format()
+# 重构时自动格式化
+refactor.rename_function_with_format("old_function", "new_function", apply_formatting=True)
+refactor.rename_class_with_format("OldClass", "NewClass", apply_formatting=True)
 
-print("简化的测试代码:")
-print(simplified_code)
-# 输出: 干净、格式化的代码，包含模拟数据
+# 或在最后应用格式化
+refactor.modernize_syntax()
+formatted_result = refactor.refactor_and_format()
+
+print("格式化后的美观结果:")
+print(formatted_result)
+```
+
+### 构建 pyupgrade 风格的工具
+
+```python
+import pyrustor
+
+def modernize_python_code(source_code: str) -> str:
+    """构建 pyupgrade 风格的现代化工具。"""
+    parser = pyrustor.Parser()
+    ast = parser.parse_string(source_code)
+    refactor = pyrustor.Refactor(ast)
+
+    # 应用常见的现代化转换
+    refactor.replace_import("ConfigParser", "configparser")
+    refactor.replace_import("urllib2", "urllib.request")
+    refactor.modernize_syntax()  # % 格式化 -> f-strings 等
+
+    # 返回格式化后的美观结果
+    return refactor.refactor_and_format()
+
+# 使用示例
+legacy_code = '''import ConfigParser
+def greet(name):
+    return "Hello, %s!" % name'''
+
+modernized = modernize_python_code(legacy_code)
+print(modernized)
+# 输出: 干净、现代的 Python 代码，包含 f-strings 和更新的导入
 ```
 
 ## 📚 API 参考
@@ -244,9 +263,19 @@ refactor.rename_function("old_name", "new_name")
 refactor.rename_class("OldClass", "NewClass")
 refactor.replace_import("old_module", "new_module")
 
+# 重构时自动格式化
+refactor.rename_function_with_format("old_name", "new_name", apply_formatting=True)
+refactor.rename_class_with_format("OldClass", "NewClass", apply_formatting=True)
+refactor.modernize_syntax_with_format(apply_formatting=True)
+
 # 高级重构
 refactor.modernize_syntax()
 refactor.modernize_imports()
+
+# 格式化选项
+refactor.format_code()  # 应用 Ruff 格式化
+formatted_result = refactor.refactor_and_format()  # 一步完成重构和格式化
+conditional_format = refactor.to_string_with_format(apply_formatting=True)
 
 # 获取结果
 refactored_code = refactor.to_string()

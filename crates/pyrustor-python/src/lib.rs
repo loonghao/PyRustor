@@ -219,6 +219,74 @@ impl Refactor {
         self.inner.change_summary()
     }
 
+    /// Rename function with optional formatting
+    fn rename_function_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> PyResult<()> {
+        match self.inner.rename_function_with_format(old_name, new_name, apply_formatting) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Refactor error: {}",
+                e
+            ))),
+        }
+    }
+
+    /// Rename class with optional formatting
+    fn rename_class_with_format(&mut self, old_name: &str, new_name: &str, apply_formatting: bool) -> PyResult<()> {
+        match self.inner.rename_class_with_format(old_name, new_name, apply_formatting) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Refactor error: {}",
+                e
+            ))),
+        }
+    }
+
+    /// Modernize syntax with optional formatting
+    fn modernize_syntax_with_format(&mut self, apply_formatting: bool) -> PyResult<()> {
+        match self.inner.modernize_syntax_with_format(apply_formatting) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Refactor error: {}",
+                e
+            ))),
+        }
+    }
+
+
+
+    /// Format code using Ruff's formatter
+    fn format_code(&mut self) -> PyResult<()> {
+        match self.inner.format_code() {
+            Ok(()) => Ok(()),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Refactor error: {}",
+                e
+            ))),
+        }
+    }
+
+    /// Convert to string with optional formatting
+    fn to_string_with_format(&mut self, apply_formatting: bool) -> PyResult<String> {
+        match self.inner.to_string_with_format(apply_formatting) {
+            Ok(result) => Ok(result),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Refactor error: {}",
+                e
+            ))),
+        }
+    }
+
+    /// Apply refactoring and format the result in one step
+    fn refactor_and_format(&mut self) -> PyResult<String> {
+        match self.inner.refactor_and_format() {
+            Ok(result) => Ok(result),
+            Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "Refactor error: {}",
+                e
+            ))),
+        }
+    }
+
     fn __repr__(&self) -> String {
         format!("Refactor(changes={})", self.inner.changes().len())
     }

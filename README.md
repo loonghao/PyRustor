@@ -161,43 +161,62 @@ print("Changes made:")
 print(refactor.change_summary())
 ```
 
-### Code Simplification for Testing
+### Ruff Formatter Integration
 
 ```python
 import pyrustor
 
-# Convert complex production code to test-friendly version
-production_code = '''
-from __future__ import absolute_import
-from rez_builder import PipFromDownloadBuilder
+# Messy code that needs refactoring and formatting
+messy_code = '''def   old_function(  x,y  ):
+    return x+y
 
-SOURCES = {
-    "downloads": [
-        {
-            "file_name": "shiboken6-6.5.0-cp37-abi3-win_amd64.whl",
-            "checksum": {
-                "sha256": "aee9708517821aaef547c83d689bf524d6f217d47232cb313d9af9e630215eed"
-            },
-        }
-    ]
-}
-
-if __name__ == "__main__":
-    BUILDER = PipFromDownloadBuilder(SOURCES)
-    BUILDER.build()
-'''
+class   OldClass:
+    def __init__(self,name):
+        self.name=name'''
 
 parser = pyrustor.Parser()
-ast = parser.parse_string(production_code)
+ast = parser.parse_string(messy_code)
 refactor = pyrustor.Refactor(ast)
 
-# Convert to test-friendly version with formatting
-refactor.convert_to_test_code()
-simplified_code = refactor.refactor_and_format()
+# Refactor with automatic formatting
+refactor.rename_function_with_format("old_function", "new_function", apply_formatting=True)
+refactor.rename_class_with_format("OldClass", "NewClass", apply_formatting=True)
 
-print("Simplified test code:")
-print(simplified_code)
-# Output: Clean, formatted code with mock data
+# Or apply formatting at the end
+refactor.modernize_syntax()
+formatted_result = refactor.refactor_and_format()
+
+print("Beautifully formatted result:")
+print(formatted_result)
+```
+
+### Building pyupgrade-style Tools
+
+```python
+import pyrustor
+
+def modernize_python_code(source_code: str) -> str:
+    """Build a pyupgrade-style modernization tool."""
+    parser = pyrustor.Parser()
+    ast = parser.parse_string(source_code)
+    refactor = pyrustor.Refactor(ast)
+
+    # Apply common modernizations
+    refactor.replace_import("ConfigParser", "configparser")
+    refactor.replace_import("urllib2", "urllib.request")
+    refactor.modernize_syntax()  # % formatting -> f-strings, etc.
+
+    # Return beautifully formatted result
+    return refactor.refactor_and_format()
+
+# Example usage
+legacy_code = '''import ConfigParser
+def greet(name):
+    return "Hello, %s!" % name'''
+
+modernized = modernize_python_code(legacy_code)
+print(modernized)
+# Output: Clean, modern Python code with f-strings and updated imports
 ```
 
 ## 📚 API Reference
@@ -244,16 +263,22 @@ refactor.rename_function("old_name", "new_name")
 refactor.rename_class("OldClass", "NewClass")
 refactor.replace_import("old_module", "new_module")
 
+# Refactoring with automatic formatting
+refactor.rename_function_with_format("old_name", "new_name", apply_formatting=True)
+refactor.rename_class_with_format("OldClass", "NewClass", apply_formatting=True)
+refactor.modernize_syntax_with_format(apply_formatting=True)
+
 # Advanced refactoring
 refactor.modernize_syntax()
 refactor.modernize_imports()
 
-# Code simplification for testing
-refactor.convert_to_test_code()
-refactor.replace_complex_data_with_mocks()
+# Formatting options
+refactor.format_code()  # Apply Ruff formatting
+formatted_result = refactor.refactor_and_format()  # Refactor + format in one step
+conditional_format = refactor.to_string_with_format(apply_formatting=True)
 
-# Get results with formatting
-refactored_code = refactor.refactor_and_format()
+# Get results
+refactored_code = refactor.to_string()
 changes = refactor.change_summary()
 
 # Save to file

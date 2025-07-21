@@ -1,15 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "bootstrap-sha": "ca3c571",
+  "bootstrap-sha": "9c4ea937cab43b3f6b5f8b16bfb3615d8cc6c294",
   "release-type": "python",
   "include-v-in-tag": true,
-  "pull-request-title-pattern": "chore: release ${component} ${version}",
-  "pull-request-header": ":robot: I have created a release *beep* *boop*\n---",
-  "pull-request-footer": "This PR was generated with Release Please. See [documentation](https://github.com/googleapis/release-please).",
-  "separate-pull-requests": false,
-  "group-pull-request-title-pattern": "chore: release ${branch}",
-  "release-search-depth": 400,
-  "commit-search-depth": 500,
   "packages": {
     ".": {
       "package-name": "pyrustor",
@@ -17,24 +10,7 @@
       "changelog-path": "CHANGELOG.md",
       "release-type": "python",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true,
-      "extra-files": [
-        {
-          "type": "toml",
-          "path": "Cargo.toml",
-          "jsonpath": "$.workspace.package.version"
-        },
-        {
-          "type": "toml",
-          "path": "crates/pyrustor-core/Cargo.toml",
-          "jsonpath": "$.package.version"
-        },
-        {
-          "type": "toml",
-          "path": "crates/pyrustor-python/Cargo.toml",
-          "jsonpath": "$.package.version"
-        }
-      ]
+      "bump-patch-for-minor-pre-major": true
     }
   },
   "changelog-sections": [

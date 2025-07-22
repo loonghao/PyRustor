@@ -56,7 +56,10 @@ jobs:
           PYTHONUNBUFFERED: 1
       
       - name: Run basic functionality tests
-        run: uv run python -c 'import pyrustor; print("PyRustor imported successfully")'
+        run: |
+          uv run python -c 'import pyrustor; print("PyRustor imported successfully")'
+          uv run python -c 'import pyrustor; parser = pyrustor.Parser(); print("Parser created successfully")'
+          uv run python -c 'import pyrustor; print("Available attributes:", [attr for attr in dir(pyrustor) if not attr.startswith("_")])'
 
   # Code formatting and linting
   lint:

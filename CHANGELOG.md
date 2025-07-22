@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.0...pyrustor-v0.1.1) (2025-07-22)
+
+
+### Bug Fixes
+
+* disable clippy uninlined_format_args in CI ([65297ce](https://github.com/loonghao/PyRustor/commit/65297cef99c642980c0e35bcb7fc40e8b7ff4079))
+* resolve clippy wrong_self_convention warnings ([8648ffa](https://github.com/loonghao/PyRustor/commit/8648ffac729953542f05174ee16dc71dfabbfae5))
+* resolve macOS ABI3 build issues ([d5ce5b5](https://github.com/loonghao/PyRustor/commit/d5ce5b5daeddfc29fd8c39b86e20b40af0910246))
+* update test files to use renamed methods ([53ebe45](https://github.com/loonghao/PyRustor/commit/53ebe45192a71486ff88d0ee202baec083f4b528))
+
 ## 0.1.0 (2025-07-21)
 
 

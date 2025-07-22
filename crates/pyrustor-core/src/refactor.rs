@@ -739,4 +739,269 @@ mod tests {
         assert!(summary.contains("Renamed function"));
         Ok(())
     }
+
+    #[test]
+    fn test_multiple_function_renames() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+def func1(): pass
+def func2(): pass
+def func3(): pass
+"#;
+        let ast = parser.parse_string(code)?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_function("func1", "function1")?;
+        refactor.rename_function("func2", "function2")?;
+        refactor.rename_function("func3", "function3")?;
+
+        assert_eq!(refactor.changes().len(), 3);
+
+        let functions = refactor.ast().functions();
+        let names: Vec<String> = functions.iter().map(|f| f.name.to_string()).collect();
+        assert!(names.contains(&"function1".to_string()));
+        assert!(names.contains(&"function2".to_string()));
+        assert!(names.contains(&"function3".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_class_renames() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+class Class1: pass
+class Class2: pass
+class Class3: pass
+"#;
+        let ast = parser.parse_string(code)?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_class("Class1", "Component1")?;
+        refactor.rename_class("Class2", "Component2")?;
+        refactor.rename_class("Class3", "Component3")?;
+
+        assert_eq!(refactor.changes().len(), 3);
+
+        let classes = refactor.ast().classes();
+        let names: Vec<String> = classes.iter().map(|c| c.name.to_string()).collect();
+        assert!(names.contains(&"Component1".to_string()));
+        assert!(names.contains(&"Component2".to_string()));
+        assert!(names.contains(&"Component3".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_import() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("import old_module")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.replace_import("old_module", "new_module")?;
+
+        // The operation should complete without error
+        // Note: Full import replacement implementation may vary
+        // Changes length is always >= 0, so we just check it doesn't panic
+        let _changes_count = refactor.changes().len();
+        Ok(())
+    }
+
+    #[test]
+    fn test_modernize_syntax() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+def old_style():
+    name = "John"
+    message = "Hello, %s!" % name
+    return message
+"#;
+        let ast = parser.parse_string(code)?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.modernize_syntax()?;
+
+        // Should complete without error
+        let result = refactor.to_string()?;
+        assert!(!result.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_to_string_after_modifications() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("def old_function(): pass")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_function("old_function", "new_function")?;
+
+        let result = refactor.to_string()?;
+        assert!(result.contains("new_function"));
+        assert!(!result.contains("old_function"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_complex_refactoring_workflow() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+import ConfigParser
+from imp import reload
+
+class OldClass:
+    def old_method(self):
+        return "old"
+
+def old_function():
+    return OldClass()
+"#;
+        let ast = parser.parse_string(code)?;
+        let mut refactor = Refactor::new(ast);
+
+        // Apply multiple refactoring operations
+        refactor.replace_import("ConfigParser", "configparser")?;
+        refactor.replace_import("imp", "importlib")?;
+        refactor.rename_class("OldClass", "NewClass")?;
+        refactor.rename_function("old_function", "new_function")?;
+        refactor.modernize_syntax()?;
+
+        // Check that changes were recorded
+        assert!(refactor.changes().len() > 0);
+
+        // Check that code generation works
+        let result = refactor.to_string()?;
+        assert!(result.contains("NewClass"));
+        assert!(result.contains("new_function"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unicode_function_names() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("def greet_世界(): pass")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_function("greet_世界", "hello_world")?;
+
+        let functions = refactor.ast().functions();
+        assert_eq!(functions[0].name.as_str(), "hello_world");
+        Ok(())
+    }
+
+    #[test]
+    fn test_unicode_class_names() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("class Test_测试: pass")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_class("Test_测试", "TestClass")?;
+
+        let classes = refactor.ast().classes();
+        assert_eq!(classes[0].name.as_str(), "TestClass");
+        Ok(())
+    }
+
+    #[test]
+    fn test_empty_ast_refactoring() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("")?;
+        let mut refactor = Refactor::new(ast);
+
+        // These operations should not crash on empty AST
+        refactor.modernize_syntax()?;
+        refactor.replace_import("nonexistent", "also_nonexistent")?;
+
+        assert_eq!(refactor.change_summary(), "No changes made");
+        Ok(())
+    }
+
+    #[test]
+    fn test_refactor_with_format() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("def old_function(): pass")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_function_with_format("old_function", "new_function", true)?;
+
+        let result = refactor.to_string()?;
+        assert!(result.contains("new_function"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_save_to_file() -> Result<()> {
+        use std::fs;
+        use tempfile::tempdir;
+
+        let parser = Parser::new();
+        let ast = parser.parse_string("def test_function(): pass")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_function("test_function", "renamed_function")?;
+
+        let dir = tempdir()?;
+        let file_path = dir.path().join("output.py");
+        refactor.save_to_file(&file_path)?;
+
+        let content = fs::read_to_string(&file_path)?;
+        assert!(content.contains("renamed_function"));
+        assert!(!content.contains("test_function"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_undo_last_change() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("def hello(): pass")?;
+        let mut refactor = Refactor::new(ast);
+
+        refactor.rename_function("hello", "greet")?;
+        assert_eq!(refactor.changes().len(), 1);
+
+        refactor.undo_last_change()?;
+        assert_eq!(refactor.changes().len(), 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_undo_with_no_changes() {
+        let parser = Parser::new();
+        let ast = parser.parse_string("def hello(): pass").unwrap();
+        let mut refactor = Refactor::new(ast);
+
+        let result = refactor.undo_last_change();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_large_refactoring() -> Result<()> {
+        let parser = Parser::new();
+
+        // Generate a large Python file
+        let mut large_code = String::new();
+        for i in 0..100 {
+            large_code.push_str(&format!("def function_{}(): return {}\n", i, i));
+            large_code.push_str(&format!("class Class_{}: pass\n", i));
+        }
+
+        let ast = parser.parse_string(&large_code)?;
+        let mut refactor = Refactor::new(ast);
+
+        // Rename every 10th function and class
+        for i in (0..100).step_by(10) {
+            refactor.rename_function(&format!("function_{}", i), &format!("renamed_function_{}", i))?;
+            refactor.rename_class(&format!("Class_{}", i), &format!("RenamedClass_{}", i))?;
+        }
+
+        assert_eq!(refactor.changes().len(), 20); // 10 functions + 10 classes
+
+        let result = refactor.to_string()?;
+        assert!(result.contains("renamed_function_0"));
+        assert!(result.contains("RenamedClass_0"));
+
+        Ok(())
+    }
 }

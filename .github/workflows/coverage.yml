@@ -1,0 +1,90 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install just
+        uses: extractions/setup-just@v2
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install coverage tools
+        run: just install-coverage-tools
+      
+      - name: Build extension
+        run: just ci-build
+        env:
+          RUST_BACKTRACE: 1
+      
+      - name: Generate type stubs
+        run: just ci-stubs
+      
+      - name: Run Rust tests with coverage
+        run: just coverage-rust
+      
+      - name: Run Python tests with coverage
+        run: just coverage-python
+        env:
+          PYTHONUNBUFFERED: 1
+      
+      - name: Upload Rust coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: target/tarpaulin/cobertura.xml
+          flags: rust
+          name: rust-coverage
+          fail_ci_if_error: false
+      
+      - name: Upload Python coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          flags: python
+          name: python-coverage
+          fail_ci_if_error: false
+      
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+      
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            htmlcov/
+            target/tarpaulin/
+            coverage.xml
+            target/tarpaulin/cobertura.xml
+      
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 70

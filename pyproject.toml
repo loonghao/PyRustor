@@ -38,6 +38,7 @@ test = [
     "pytest-benchmark>=4.0.0",
     "pytest-cov>=4.0.0",
     "pytest-xdist>=3.0.0",  # parallel testing
+    "coverage[toml]>=7.0.0", # coverage with TOML support
     "psutil>=5.9.0",
 ]
 benchmark = [
@@ -112,19 +113,32 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q --strict-markers --strict-config --cov=pyrustor --cov-report=html --cov-report=term-missing"
+minversion = "7.0"
+addopts = [
+    "-ra", "-q",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=pyrustor",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml:coverage.xml",
+    "--cov-branch",
+    "--cov-fail-under=80",
+]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
-    "benchmark: marks tests as benchmark tests (deselect with '-m \"not benchmark\"')",
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "network: marks tests that require network access",
-    "integration: marks tests as integration tests",
-    "refactor: marks tests for refactoring functionality",
-    "parser: marks tests for parsing functionality",
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "benchmark: Benchmark tests (deselect with '-m \"not benchmark\"')",
+    "slow: Slow running tests (deselect with '-m \"not slow\"')",
+    "network: Network access required tests",
+    "parser: Parser-related tests",
+    "refactor: Refactor-related tests",
+    "error_handling: Error handling tests",
+    "edge_case: Edge case tests",
 ]
 filterwarnings = [
     "error",
@@ -149,3 +163,8 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+show_missing = true
+precision = 2
+skip_covered = false
+
+

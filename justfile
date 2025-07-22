@@ -147,6 +147,36 @@ ci-wheel-test:
     fi
     @echo "✅ Wheel installation test completed"
 
+# Coverage commands
+coverage-python:
+    @echo "📊 Running Python tests with coverage..."
+    uv run pytest --cov=pyrustor --cov-report=html --cov-report=term-missing --cov-report=xml
+
+coverage-rust:
+    @echo "📊 Running Rust tests with coverage..."
+    @if command -v cargo-tarpaulin >/dev/null 2>&1; then \
+        cargo tarpaulin --out Html --out Xml --output-dir target/tarpaulin --workspace --exclude pyrustor-python; \
+    else \
+        echo "⚠️  cargo-tarpaulin not installed. Installing..."; \
+        cargo install cargo-tarpaulin; \
+        cargo tarpaulin --out Html --out Xml --output-dir target/tarpaulin --workspace --exclude pyrustor-python; \
+    fi
+
+coverage-all: coverage-rust coverage-python
+    @echo "📊 All coverage reports generated!"
+    @echo "  - Rust coverage: target/tarpaulin/tarpaulin-report.html"
+    @echo "  - Python coverage: htmlcov/index.html"
+
+# Install coverage tools
+install-coverage-tools:
+    @echo "🔧 Installing coverage tools..."
+    @if ! command -v cargo-tarpaulin >/dev/null 2>&1; then \
+        echo "Installing cargo-tarpaulin..."; \
+        cargo install cargo-tarpaulin; \
+    fi
+    uv sync --group test
+    @echo "✅ Coverage tools installed"
+
 # Clean build artifacts
 clean:
     @echo "🧹 Cleaning build artifacts..."

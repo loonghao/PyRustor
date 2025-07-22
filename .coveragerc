@@ -1,0 +1,42 @@
+[run]
+source = python/pyrustor
+branch = True
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */.*
+    */venv/*
+    */.venv/*
+    */build/*
+    */dist/*
+    */target/*
+    */htmlcov/*
+    setup.py
+    conftest.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+show_missing = True
+precision = 2
+skip_covered = False
+skip_empty = False
+
+[html]
+directory = htmlcov
+title = PyRustor Coverage Report
+
+[xml]
+output = coverage.xml

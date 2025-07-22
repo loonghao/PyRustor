@@ -476,6 +476,8 @@ source = { editable = "." }
 
 [package.dev-dependencies]
 benchmark = [
+    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.9'" },
+    { name = "coverage", version = "7.9.2", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.9'" },
     { name = "psutil" },
     { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pytest", version = "8.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -487,6 +489,8 @@ benchmark = [
     { name = "pytest-xdist", version = "3.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
 ]
 dev = [
+    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.9'" },
+    { name = "coverage", version = "7.9.2", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.9'" },
     { name = "maturin" },
     { name = "mypy", version = "1.14.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "mypy", version = "1.17.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -503,6 +507,8 @@ dev = [
     { name = "ruff" },
 ]
 test = [
+    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.9'" },
+    { name = "coverage", version = "7.9.2", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.9'" },
     { name = "psutil" },
     { name = "pytest", version = "8.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "pytest", version = "8.4.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -518,6 +524,7 @@ test = [
 
 [package.metadata.requires-dev]
 benchmark = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.0.0" },
     { name = "psutil", specifier = ">=5.9.0" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-benchmark", specifier = ">=4.0.0" },
@@ -525,6 +532,7 @@ benchmark = [
     { name = "pytest-xdist", specifier = ">=3.0.0" },
 ]
 dev = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.0.0" },
     { name = "maturin", specifier = ">=1.0.0" },
     { name = "mypy", specifier = ">=1.0.0" },
     { name = "psutil", specifier = ">=5.9.0" },
@@ -536,6 +544,7 @@ dev = [
     { name = "ruff", specifier = ">=0.1.0" },
 ]
 test = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.0.0" },
     { name = "psutil", specifier = ">=5.9.0" },
     { name = "pytest", specifier = ">=7.0.0" },
     { name = "pytest-benchmark", specifier = ">=4.0.0" },

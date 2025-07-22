@@ -114,22 +114,22 @@ release:
     @echo "📦 Building release wheels..."
     uvx maturin build --release
     @echo "🔍 Verifying wheel contents..."
-    python -m zipfile -l target/wheels/*.whl
+    @powershell -Command "Get-ChildItem target/wheels/*.whl | ForEach-Object { python -m zipfile -l $_.FullName }"
 
 # Build ABI3 wheels (compatible with Python 3.8+)
 release-abi3:
     @echo "📦 Building ABI3 wheels..."
     uvx maturin build --release --features abi3
     @echo "🔍 Verifying wheel contents..."
-    python -m zipfile -l target/wheels/*.whl
+    @powershell -Command "Get-ChildItem target/wheels/*.whl | ForEach-Object { python -m zipfile -l $_.FullName }"
 
 # Test built wheel functionality
 test-wheel:
     @echo "🧪 Testing built wheel..."
-    pip install pyrustor --find-links target/wheels --force-reinstall
+    uv pip install pyrustor --find-links target/wheels --force-reinstall
     python scripts/test_wheel_integrity.py
     @echo "🧪 Running pytest on installed wheel..."
-    python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+    uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
 
 # Build and publish to PyPI (requires authentication)
 publish: release

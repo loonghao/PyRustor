@@ -17,12 +17,12 @@ install:
 # Build the extension module
 build:
     @echo "🔧 Building extension module..."
-    uvx maturin develop --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin develop
 
 # Build with release optimizations
 build-release:
     @echo "🚀 Building release version..."
-    uvx maturin develop --release --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin develop --release
 
 # Run tests
 test:
@@ -69,7 +69,7 @@ test-cov-open: test-cov
 # Generate Python type stub files using pyo3-stubgen
 stubs:
     @echo "📝 Generating type stubs with pyo3-stubgen..."
-    uvx maturin develop --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin develop
     uv run pyo3-stubgen pyrustor._pyrustor python/pyrustor/
     @echo "✅ Type stubs generated successfully"
 
@@ -112,17 +112,29 @@ dev: install build stubs
 # Build release wheels for all platforms
 release:
     @echo "📦 Building release wheels..."
-    uvx maturin build --release --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin build --release
+    @echo "🔍 Verifying wheel contents..."
+    python -m zipfile -l target/wheels/*.whl
 
 # Build ABI3 wheels (compatible with Python 3.8+)
 release-abi3:
     @echo "📦 Building ABI3 wheels..."
-    uvx maturin build --release --features abi3 --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin build --release --features abi3
+    @echo "🔍 Verifying wheel contents..."
+    python -m zipfile -l target/wheels/*.whl
+
+# Test built wheel functionality
+test-wheel:
+    @echo "🧪 Testing built wheel..."
+    pip install pyrustor --find-links target/wheels --force-reinstall
+    python scripts/test_wheel_integrity.py
+    @echo "🧪 Running pytest on installed wheel..."
+    python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
 
 # Build and publish to PyPI (requires authentication)
 publish: release
     @echo "🚀 Publishing to PyPI..."
-    uvx maturin publish --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin publish
 
 # Run benchmarks
 bench:
@@ -168,7 +180,7 @@ check-version:
 # Verify stub files are included in wheel
 verify-stubs:
     @echo "🔍 Verifying stub files in wheel..."
-    uvx maturin build --release --manifest-path crates/pyrustor-python/Cargo.toml
+    uvx maturin build --release
     python -m zipfile -l target/wheels/*.whl | grep "\\.pyi"
     @echo "✅ Stub files verified in wheel package"
 

@@ -80,15 +80,15 @@ impl Formatter {
             return Ok(String::new());
         }
 
-        // Simple implementation - in practice this would be much more sophisticated
-        let source = ast.source();
+        // Generate code from the current AST state (which may have been modified)
+        let generated_code = ast.to_string()?;
 
         if self.config.preserve_original {
-            // Try to preserve the original formatting
-            Ok(source.to_string())
+            // Return the generated code (which reflects any modifications)
+            Ok(generated_code)
         } else {
-            // Apply formatting rules
-            self.apply_formatting_rules(source)
+            // Apply formatting rules to the generated code
+            self.apply_formatting_rules(&generated_code)
         }
     }
 

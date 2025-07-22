@@ -97,6 +97,56 @@ fix:
 check: format lint test
     @echo "✅ All checks passed!"
 
+# CI-specific commands
+ci-install:
+    @echo "📦 Installing CI dependencies..."
+    uv sync --group dev
+
+ci-build:
+    @echo "🔧 Building extension for CI..."
+    uv pip install maturin
+    uv run maturin develop
+
+ci-stubs:
+    @echo "📝 Generating type stubs for CI..."
+    uv run pyo3-stubgen pyrustor._pyrustor python/pyrustor/
+    @echo "✅ Type stubs generated successfully"
+
+ci-test-rust:
+    @echo "🧪 Running Rust tests..."
+    cargo test --workspace --exclude pyrustor-python
+
+ci-test-python:
+    @echo "🧪 Running Python tests..."
+    uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+
+ci-test-basic:
+    @echo "🧪 Running basic functionality tests..."
+    uv run python -c 'import pyrustor; print("PyRustor imported successfully")'
+    uv run python -c 'import pyrustor; parser = pyrustor.Parser(); print("Parser created successfully")'
+    uv run python -c 'import pyrustor; print("Available attributes:", [attr for attr in dir(pyrustor) if not attr.startswith("_")])'
+
+ci-lint:
+    @echo "🔍 Running CI linting..."
+    cargo fmt --all -- --check
+    cargo clippy --all-targets --all-features -- -D warnings -A clippy::uninlined-format-args
+    uv run ruff check .
+    uv run ruff format --check .
+
+ci-wheel-build:
+    @echo "📦 Building wheel for CI..."
+    maturin build --release --out dist --find-interpreter
+
+ci-wheel-test:
+    @echo "🧪 Testing wheel installation..."
+    python -m venv test-env
+    @if [ "$(shell uname)" = "Darwin" ] || [ "$(shell uname)" = "Linux" ]; then \
+        source test-env/bin/activate && pip install pyrustor --find-links dist --force-reinstall; \
+    else \
+        test-env/Scripts/activate && pip install pyrustor --find-links dist --force-reinstall; \
+    fi
+    @echo "✅ Wheel installation test completed"
+
 # Clean build artifacts
 clean:
     @echo "🧹 Cleaning build artifacts..."

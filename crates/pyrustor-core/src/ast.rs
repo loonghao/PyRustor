@@ -63,10 +63,155 @@ impl PythonAst {
 
     /// Convert the AST back to Python source code
     pub fn to_string(&self) -> Result<String> {
-        // For now, we'll use a simple approach
-        // In a full implementation, this would use a proper code generator
-        // that preserves formatting based on the original source
-        Ok(format!("{:#?}", self.module))
+        if self.module.body.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Generate Python code from the AST
+        self.generate_code()
+    }
+
+    /// Generate Python code from the AST
+    fn generate_code(&self) -> Result<String> {
+        let mut code = String::new();
+
+        for (i, stmt) in self.module.body.iter().enumerate() {
+            if i > 0 {
+                code.push('\n');
+            }
+            code.push_str(&self.generate_statement(stmt, 0)?);
+        }
+
+        Ok(code)
+    }
+
+    /// Generate code for a single statement
+    fn generate_statement(&self, stmt: &ruff_python_ast::Stmt, indent: usize) -> Result<String> {
+        use ruff_python_ast::Stmt;
+
+        let indent_str = "    ".repeat(indent);
+
+        match stmt {
+            Stmt::FunctionDef(func) => {
+                let mut result = format!("{}def {}(", indent_str, func.name);
+
+                // Add parameters
+                for (i, arg) in func.parameters.args.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&arg.parameter.name);
+                }
+
+                result.push_str("):\n");
+
+                // Add body
+                if func.body.is_empty() {
+                    result.push_str(&format!("{}    pass", indent_str));
+                } else {
+                    for (i, body_stmt) in func.body.iter().enumerate() {
+                        if i > 0 {
+                            result.push('\n');
+                        }
+                        result.push_str(&self.generate_statement(body_stmt, indent + 1)?);
+                    }
+                }
+
+                Ok(result)
+            }
+
+            Stmt::ClassDef(class) => {
+                let mut result = format!("{}class {}", indent_str, class.name);
+
+                // Add base classes
+                if !class.bases().is_empty() {
+                    result.push('(');
+                    for (i, base) in class.bases().iter().enumerate() {
+                        if i > 0 {
+                            result.push_str(", ");
+                        }
+                        result.push_str(&self.generate_expression(base)?);
+                    }
+                    result.push(')');
+                }
+
+                result.push_str(":\n");
+
+                // Add body
+                if class.body.is_empty() {
+                    result.push_str(&format!("{}    pass", indent_str));
+                } else {
+                    for (i, body_stmt) in class.body.iter().enumerate() {
+                        if i > 0 {
+                            result.push('\n');
+                        }
+                        result.push_str(&self.generate_statement(body_stmt, indent + 1)?);
+                    }
+                }
+
+                Ok(result)
+            }
+
+            Stmt::Return(ret) => {
+                let mut result = format!("{}return", indent_str);
+                if let Some(value) = &ret.value {
+                    result.push(' ');
+                    result.push_str(&self.generate_expression(value)?);
+                }
+                Ok(result)
+            }
+
+            Stmt::Pass(_) => Ok(format!("{}pass", indent_str)),
+
+            Stmt::Expr(expr) => {
+                let expr_code = self.generate_expression(&expr.value)?;
+                Ok(format!("{}{}", indent_str, expr_code))
+            }
+
+            // Add more statement types as needed
+            _ => {
+                // For unsupported statements, return a placeholder
+                Ok(format!("{}# Unsupported statement type", indent_str))
+            }
+        }
+    }
+
+    /// Generate code for an expression
+    fn generate_expression(&self, expr: &ruff_python_ast::Expr) -> Result<String> {
+        use ruff_python_ast::Expr;
+
+        match expr {
+            Expr::Name(name) => Ok(name.id.to_string()),
+            Expr::StringLiteral(s) => {
+                // Simple string literal handling
+                Ok(format!("\"{}\"", s.value.to_str().replace('"', "\\\"")))
+            }
+            Expr::NumberLiteral(n) => {
+                use ruff_python_ast::Number;
+                match &n.value {
+                    Number::Int(i) => Ok(i.to_string()),
+                    Number::Float(f) => Ok(f.to_string()),
+                    Number::Complex { real, imag } => Ok(format!("({real}+{imag}j)")),
+                }
+            }
+            Expr::Call(call) => {
+                let mut result = self.generate_expression(&call.func)?;
+                result.push('(');
+
+                for (i, arg) in call.arguments.args.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&self.generate_expression(arg)?);
+                }
+
+                result.push(')');
+                Ok(result)
+            }
+
+            // Add more expression types as needed
+            _ => Ok("# Unsupported expression".to_string()),
+        }
     }
 
     /// Get all function definitions in the module

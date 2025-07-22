@@ -31,35 +31,30 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - name: Install dependencies
-        run: uv sync --group dev
-      
-      - name: Install build dependencies
-        run: uv pip install maturin
-      
+        run: just ci-install
+
       - name: Build extension
-        run: uv run maturin develop
+        run: just ci-build
         env:
           RUST_BACKTRACE: 1
-      
+
       - name: Generate type stubs
-        run: |
-          uv run pyo3-stubgen pyrustor._pyrustor python/pyrustor/
-          echo "✅ Type stubs generated successfully"
-      
+        run: just ci-stubs
+
       - name: Run Rust tests
-        run: cargo test --workspace --exclude pyrustor-python
-      
+        run: just ci-test-rust
+
       - name: Run Python tests
-        run: uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+        run: just ci-test-python
         env:
           PYTHONUNBUFFERED: 1
-      
+
       - name: Run basic functionality tests
-        run: |
-          uv run python -c 'import pyrustor; print("PyRustor imported successfully")'
-          uv run python -c 'import pyrustor; parser = pyrustor.Parser(); print("Parser created successfully")'
-          uv run python -c 'import pyrustor; print("Available attributes:", [attr for attr in dir(pyrustor) if not attr.startswith("_")])'
+        run: just ci-test-basic
 
   # Code formatting and linting
   lint:
@@ -79,49 +74,17 @@ jobs:
         with:
           components: rustfmt, clippy
 
+      - name: Install just
+        uses: extractions/setup-just@v2
+
       - name: Install dependencies
-        run: uv sync --group dev
+        run: just ci-install
 
       - name: Check version consistency
-        run: |
-          echo "🔍 Checking version consistency across all files..."
+        run: just check-version
 
-          # Get version from release-please manifest
-          RELEASE_VERSION=$(python -c "import json; print(json.load(open('.release-please-manifest.json'))['.'])")
-          echo "Release-please version: $RELEASE_VERSION"
-
-          # Get version from Cargo.toml
-          CARGO_VERSION=$(python -c "import tomllib; print(tomllib.load(open('Cargo.toml', 'rb'))['workspace']['package']['version'])")
-          echo "Cargo.toml version: $CARGO_VERSION"
-
-          # Get version from Python package
-          PYTHON_VERSION=$(python -c "import sys; sys.path.insert(0, 'python'); import pyrustor; print(pyrustor.__version__)")
-          echo "Python package version: $PYTHON_VERSION"
-
-          # Check if all versions match
-          if [ "$RELEASE_VERSION" != "$CARGO_VERSION" ] || [ "$RELEASE_VERSION" != "$PYTHON_VERSION" ]; then
-            echo "❌ Version mismatch detected!"
-            echo "  Release-please: $RELEASE_VERSION"
-            echo "  Cargo.toml: $CARGO_VERSION"
-            echo "  Python package: $PYTHON_VERSION"
-            echo "Please ensure all version files are synchronized."
-            exit 1
-          else
-            echo "✅ All versions are consistent: $RELEASE_VERSION"
-          fi
-        shell: bash
-
-      - name: Check Rust formatting
-        run: cargo fmt --all -- --check
-
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings -A clippy::uninlined-format-args
-
-      - name: Run ruff check
-        run: uv run ruff check .
-
-      - name: Run ruff format check
-        run: uv run ruff format --check .
+      - name: Run linting and formatting checks
+        run: just ci-lint
 
   # Wheel building and installation tests for PR validation
   wheel-test:
@@ -151,6 +114,9 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Install just
+        uses: extractions/setup-just@v2
 
       - name: Install maturin
         run: |

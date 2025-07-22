@@ -47,8 +47,58 @@ refactor = pyrustor.Refactor(ast)
 refactor.rename_function("hello", "greet")
 
 # Get the modified code
-result = refactor.to_string()
+result = refactor.get_code()
 print(result)  # def greet(): pass
+```
+
+### ✨ Key Features Demonstration
+
+```python
+import pyrustor
+
+# 1. Function and Class Renaming
+code = '''
+def old_function(x, y):
+    return x + y
+
+class OldClass:
+    def method(self):
+        return old_function(1, 2)
+'''
+
+parser = pyrustor.Parser()
+ast = parser.parse_string(code)
+refactor = pyrustor.Refactor(ast)
+
+# Rename function and class
+refactor.rename_function("old_function", "new_function")
+refactor.rename_class("OldClass", "NewClass")
+
+print("Refactored code:")
+print(refactor.get_code())
+
+# 2. Import Modernization
+legacy_code = '''
+import ConfigParser
+import imp
+from urllib2 import urlopen
+'''
+
+ast2 = parser.parse_string(legacy_code)
+refactor2 = pyrustor.Refactor(ast2)
+
+# Modernize imports
+refactor2.replace_import("ConfigParser", "configparser")
+refactor2.replace_import("imp", "importlib")
+refactor2.replace_import("urllib2", "urllib.request")
+
+print("Modernized imports:")
+print(refactor2.get_code())
+
+# 3. Get detailed change information
+print("Changes made:")
+for change in refactor2.change_summary():
+    print(f"  - {change}")
 ```
 
 ## 📦 Installation
@@ -110,7 +160,7 @@ refactor.rename_function("old_function", "new_function")
 refactor.rename_class("OldClass", "NewClass")
 
 # Get refactored code
-print(refactor.to_string())
+print(refactor.get_code())
 ```
 
 ### File Operations
@@ -131,6 +181,95 @@ refactor.save_to_file("refactored_example.py")
 
 # Get change summary
 print(refactor.change_summary())
+```
+
+### Complete Refactoring Workflow
+
+```python
+import pyrustor
+
+def modernize_legacy_code(source_code: str) -> str:
+    """Complete workflow for modernizing legacy Python code."""
+    parser = pyrustor.Parser()
+    ast = parser.parse_string(source_code)
+    refactor = pyrustor.Refactor(ast)
+
+    # Step 1: Modernize imports
+    refactor.replace_import("ConfigParser", "configparser")
+    refactor.replace_import("urllib2", "urllib.request")
+    refactor.replace_import("imp", "importlib")
+
+    # Step 2: Rename outdated functions/classes
+    refactor.rename_function("old_function", "new_function")
+    refactor.rename_class("LegacyClass", "ModernClass")
+
+    # Step 3: Apply syntax modernization
+    refactor.modernize_syntax()
+
+    # Step 4: Get the final result
+    return refactor.get_code()
+
+# Example usage
+legacy_code = '''
+import ConfigParser
+import urllib2
+
+def old_function():
+    config = ConfigParser.ConfigParser()
+    response = urllib2.urlopen("http://example.com")
+    return response.read()
+
+class LegacyClass:
+    def __init__(self):
+        self.data = old_function()
+'''
+
+modernized = modernize_legacy_code(legacy_code)
+print("Modernized code:")
+print(modernized)
+
+# Get detailed change information
+parser = pyrustor.Parser()
+ast = parser.parse_string(legacy_code)
+refactor = pyrustor.Refactor(ast)
+refactor.replace_import("ConfigParser", "configparser")
+refactor.rename_function("old_function", "new_function")
+
+print("\nChanges made:")
+for change in refactor.change_summary():
+    print(f"  - {change}")
+```
+
+### Error Handling and Validation
+
+```python
+import pyrustor
+
+def safe_refactor(code: str, old_name: str, new_name: str) -> tuple[str, bool]:
+    """Safely refactor code with error handling."""
+    try:
+        parser = pyrustor.Parser()
+        ast = parser.parse_string(code)
+        refactor = pyrustor.Refactor(ast)
+
+        # Attempt to rename function
+        refactor.rename_function(old_name, new_name)
+
+        return refactor.get_code(), True
+
+    except Exception as e:
+        print(f"Refactoring failed: {e}")
+        return code, False  # Return original code if refactoring fails
+
+# Example usage
+code = "def hello(): pass"
+result, success = safe_refactor(code, "hello", "greet")
+
+if success:
+    print("Refactoring successful:")
+    print(result)
+else:
+    print("Refactoring failed, original code preserved")
 ```
 
 ### Advanced Refactoring

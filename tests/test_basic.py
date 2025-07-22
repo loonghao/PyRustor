@@ -108,7 +108,7 @@ def test_modernize_syntax():
     refactor.modernize_syntax()
     
     # Should be able to get the result
-    result = refactor.to_string()
+    result = refactor.get_code()
     assert result is not None
 
 

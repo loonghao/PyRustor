@@ -105,7 +105,7 @@ class   BadlyFormattedClass:
         
         # Apply only formatting
         refactor.format_code()
-        formatted_result = refactor.to_string()
+        formatted_result = refactor.get_code()
         
         changes = refactor.change_summary()
         assert len(changes) > 0
@@ -125,11 +125,11 @@ class   BadlyFormattedClass:
         refactor = pyrustor.Refactor(ast)
         
         # Test without formatting
-        result_no_format = refactor.to_string_with_format(apply_formatting=False)
+        result_no_format = refactor.get_code_with_format(apply_formatting=False)
         changes_before = refactor.change_summary()
 
         # Test with formatting
-        result_with_format = refactor.to_string_with_format(apply_formatting=True)
+        result_with_format = refactor.get_code_with_format(apply_formatting=True)
         changes_after = refactor.change_summary()
 
         # Should have formatting changes

@@ -114,7 +114,7 @@ if __name__ == "__main__":
         assert "changes" in summary
         
         # Get the refactored code
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
         assert len(result) > 0
 
@@ -309,7 +309,7 @@ class OldClass_{i}:
         summary = refactor.change_summary()
         assert "changes" in summary
         
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
         assert len(result) > len(large_source) * 0.8  # Should be roughly same size
 

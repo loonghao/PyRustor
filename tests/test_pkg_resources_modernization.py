@@ -67,7 +67,7 @@ if __name__ == "__main__":
         refactor.replace_import("pkg_resources", "xxx_pyharmony")
         
         # Should complete without error
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
 
     def test_multiple_pkg_resources_imports(self):
@@ -129,7 +129,7 @@ parser = optparse.OptionParser()
         refactor.replace_import("optparse", "argparse")
         
         # Should handle multiple deprecated imports
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
 
     def test_pkg_resources_in_function(self):
@@ -175,7 +175,7 @@ class VersionManager:
         refactor.replace_import("pkg_resources", "xxx_pyharmony")
         
         # Should handle usage in functions and classes
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
 
     def test_pkg_resources_edge_cases(self):
@@ -238,7 +238,7 @@ def get_version():
         refactor.replace_import("pkg_resources", "xxx_pyharmony")
         
         # Should preserve comments and docstrings
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
         # Comments and docstrings should still be present
         assert '"""' in result or "'''" in result
@@ -285,7 +285,7 @@ except (DistributionNotFound, ImportError) as e:
         refactor.replace_import("pkg_resources", "xxx_pyharmony")
         
         # Should handle nested usage patterns
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
 
     def test_pkg_resources_modernization_integration(self):
@@ -321,5 +321,5 @@ def old_get_version():
         summary = refactor.change_summary()
         assert "changes" in summary
         
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None

@@ -38,6 +38,7 @@ Documentation = "https://docs.rs/pyrustor"
 [tool.maturin]
 python-source = "../../python"
 module-name = "pyrustor._pyrustor"
+bindings = "pyo3"
 features = ["pyo3/extension-module"]
 
 [tool.ruff]

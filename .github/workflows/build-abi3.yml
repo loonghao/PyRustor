@@ -23,7 +23,7 @@ jobs:
       
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.13'
           architecture: x64
       
       - name: Build ABI3 wheels
@@ -60,7 +60,7 @@ jobs:
       
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.13'
           architecture: ${{ matrix.target }}
       
       - name: Build ABI3 wheels
@@ -96,7 +96,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.13'
           architecture: x64
 
       - name: Build ABI3 wheels

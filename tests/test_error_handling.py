@@ -251,7 +251,7 @@ class UnicodeClass:
         refactor.rename_function("unicode_function", "renamed_unicode_function")
         refactor.rename_class("UnicodeClass", "RenamedUnicodeClass")
         
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
 
     def test_very_long_lines(self):

@@ -163,7 +163,7 @@ def old_style_function():
         refactor.modernize_syntax()
         
         # Should complete without error
-        result = refactor.to_string()
+        result = refactor.get_code()
         assert result is not None
 
     def test_save_to_file(self):
@@ -272,5 +272,5 @@ def another_old_function():
         minimal_ast = parser.parse_string("pass")
         minimal_refactor = pyrustor.Refactor(minimal_ast)
         minimal_refactor.modernize_syntax()
-        result = minimal_refactor.to_string()
+        result = minimal_refactor.get_code()
         assert result is not None

@@ -16,7 +16,7 @@ Example:
 
 from ._pyrustor import Parser, PythonAst, Refactor
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 
 __all__ = [
     "Parser",

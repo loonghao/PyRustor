@@ -10,7 +10,14 @@
       "changelog-path": "CHANGELOG.md",
       "release-type": "python",
       "bump-minor-pre-major": true,
-      "bump-patch-for-minor-pre-major": true
+      "bump-patch-for-minor-pre-major": true,
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "Cargo.toml",
+          "jsonpath": "$.workspace.package.version"
+        }
+      ]
     }
   },
   "changelog-sections": [

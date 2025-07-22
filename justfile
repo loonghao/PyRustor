@@ -172,9 +172,19 @@ changelog:
     @echo "📋 Generating changelog..."
     uvx --from commitizen cz changelog
 
-# Check version consistency
+# Check version consistency across all files
 check-version:
     @echo "🔍 Checking version consistency..."
+    uv run python scripts/sync_versions.py --check-only
+
+# Synchronize all version files with release-please manifest
+sync-version:
+    @echo "🔄 Synchronizing version files..."
+    uv run python scripts/sync_versions.py
+
+# Check commitizen version consistency
+check-cz-version:
+    @echo "🔍 Checking commitizen version consistency..."
     uvx --from commitizen cz check --rev-range HEAD~1..HEAD
 
 # Verify stub files are included in wheel

@@ -11,7 +11,7 @@ Example:
     >>> ast = parser.parse_string("def hello(): pass")
     >>> refactor = pyrustor.Refactor(ast)
     >>> refactor.rename_function("hello", "greet")
-    >>> print(refactor.to_string())
+    >>> print(refactor.get_code())
 """
 
 from ._pyrustor import Parser, PythonAst, Refactor

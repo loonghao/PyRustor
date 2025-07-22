@@ -92,7 +92,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.8'
           architecture: x64
 
       - name: Build ABI3 wheels
@@ -101,6 +101,14 @@ jobs:
           target: ${{ matrix.target }}
           args: --release --out dist --find-interpreter --features abi3
           sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+      - name: Debug wheel contents
+        if: matrix.target == 'x86_64'
+        run: |
+          echo "Contents of dist directory:"
+          ls -la dist/
+          echo "Wheel file contents:"
+          python -m zipfile -l dist/*.whl
 
       - name: Install built wheel
         if: matrix.target == 'x86_64'

@@ -45,7 +45,7 @@ class PythonAst:
         """Get import information"""
         ...
     
-    def to_string(self) -> str:
+    def get_code(self) -> str:
         """Convert AST back to string"""
         ...
 
@@ -72,7 +72,7 @@ class Refactor:
         """Modernize syntax"""
         ...
     
-    def to_string(self) -> str:
+    def get_code(self) -> str:
         """Get the refactored code as string"""
         ...
     

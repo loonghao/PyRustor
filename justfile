@@ -177,6 +177,59 @@ install-coverage-tools:
     uv sync --group test
     @echo "✅ Coverage tools installed"
 
+# Performance testing
+performance:
+    @echo "🚀 Running performance tests..."
+    uv run python scripts/performance_test.py
+
+performance-ci:
+    @echo "🚀 Running CI performance tests..."
+    uv run python scripts/performance_test.py
+    @echo "📊 Performance results saved"
+
+# Quality checks
+quality:
+    @echo "🔍 Running quality checks..."
+    uv run python scripts/quality_check.py
+
+quality-ci:
+    @echo "🔍 Running CI quality checks..."
+    uv run python scripts/quality_check.py
+
+# Security checks
+security:
+    @echo "🔒 Running security checks..."
+    @echo "Checking Rust dependencies..."
+    @if command -v cargo-audit >/dev/null 2>&1; then \
+        cargo audit; \
+    else \
+        echo "Installing cargo-audit..."; \
+        cargo install cargo-audit; \
+        cargo audit; \
+    fi
+    @echo "Checking Python dependencies..."
+    uv add --group dev safety bandit
+    uv run safety check
+    uv run bandit -r python/ -ll
+
+# Documentation checks
+docs-check:
+    @echo "📚 Checking documentation..."
+    cargo doc --no-deps --document-private-items
+    @echo "✅ Documentation check completed"
+
+docs-serve:
+    @echo "📚 Serving documentation..."
+    cargo doc --no-deps --document-private-items --open
+
+# Comprehensive checks (all quality checks)
+check-all: format lint test coverage-all quality security docs-check
+    @echo "🎉 All checks completed!"
+
+# CI-specific comprehensive checks
+ci-check-all: ci-lint ci-test-rust ci-test-python coverage-all quality-ci
+    @echo "🎉 All CI checks completed!"
+
 # Clean build artifacts
 clean:
     @echo "🧹 Cleaning build artifacts..."

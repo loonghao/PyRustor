@@ -448,6 +448,61 @@ just lint
 just release
 ```
 
+### Testing
+
+PyRustor has comprehensive test coverage with 257+ tests across Rust and Python components.
+
+```bash
+# Run all tests (Rust + Python)
+just test
+
+# Run specific test categories
+just test-rust          # 91 Rust tests
+just test-python        # 166 Python tests
+
+# Run with coverage reporting
+just coverage-all       # Generate coverage reports for both languages
+just coverage-python    # Python coverage only
+just coverage-rust      # Rust coverage only
+
+# Run specific test types
+pytest tests/ -m "unit"           # Unit tests only
+pytest tests/ -m "integration"    # Integration tests only
+pytest tests/ -m "benchmark"      # Performance benchmarks
+pytest tests/ -m "not slow"       # Skip slow tests
+```
+
+#### Test Categories
+
+- **Unit Tests**: Core functionality testing
+- **Integration Tests**: End-to-end workflow testing
+- **Edge Case Tests**: Boundary conditions and error handling
+- **Performance Tests**: Benchmarking and regression detection
+- **Unicode Tests**: International character support
+- **Error Handling Tests**: Robust error recovery
+
+#### Coverage Reports
+
+After running coverage tests, view detailed reports:
+- **Python**: `htmlcov/index.html`
+- **Rust**: `target/tarpaulin/tarpaulin-report.html`
+
+### Quality Assurance
+
+```bash
+# Run all quality checks
+just check-all
+
+# Individual quality checks
+just quality            # Code quality analysis
+just security           # Security vulnerability scanning
+just performance        # Performance benchmarking
+just docs-check         # Documentation validation
+
+# CI-specific checks
+just ci-check-all       # All checks optimized for CI
+```
+
 ### Available Commands
 
 ```bash

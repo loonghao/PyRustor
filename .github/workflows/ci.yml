@@ -153,7 +153,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install maturin
-        run: uv pip install maturin --system
+        run: uv pip install maturin
 
       - name: Build wheel
         run: maturin build --release --out dist --find-interpreter
@@ -171,25 +171,38 @@ jobs:
       - name: Test wheel installation in clean environment
         run: |
           # Create a clean virtual environment
-          uv venv test-env --python ${{ matrix.python-version }}
+          python -m venv test-env
 
-          # Install the wheel in the clean environment
-          uv pip install pyrustor --find-links dist --force-reinstall --python test-env
+          # Activate and install the wheel
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ./test-env/Scripts/activate
+            pip install pyrustor --find-links dist --force-reinstall
+          else
+            source test-env/bin/activate
+            pip install pyrustor --find-links dist --force-reinstall
+          fi
 
           # Test basic functionality
-          uv run --python test-env python -c "import pyrustor; print('✅ PyRustor imported successfully')"
-          uv run --python test-env python -c "import pyrustor; parser = pyrustor.Parser(); print('✅ Parser created successfully')"
-          uv run --python test-env python -c "import pyrustor; print('✅ Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
+          python -c "import pyrustor; print('✅ PyRustor imported successfully')"
+          python -c "import pyrustor; parser = pyrustor.Parser(); print('✅ Parser created successfully')"
+          python -c "import pyrustor; print('✅ Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
+        shell: bash
         env:
           PYTHONUNBUFFERED: 1
 
       - name: Test wheel with dependencies
         run: |
-          # Install test dependencies in the clean environment
-          uv pip install pytest --python test-env
-
-          # Run the wheel integrity test script
-          uv run --python test-env python scripts/test_wheel_integrity.py
+          # Install test dependencies and run integrity test
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ./test-env/Scripts/activate
+            pip install pytest
+            python scripts/test_wheel_integrity.py
+          else
+            source test-env/bin/activate
+            pip install pytest
+            python scripts/test_wheel_integrity.py
+          fi
+        shell: bash
         env:
           PYTHONUNBUFFERED: 1
 

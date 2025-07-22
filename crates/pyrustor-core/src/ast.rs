@@ -95,12 +95,15 @@ impl PythonAst {
             Stmt::FunctionDef(func) => {
                 let mut result = format!("{}def {}(", indent_str, func.name);
 
-                // Add parameters
+                // Add parameters (simplified - defaults not fully supported yet)
                 for (i, arg) in func.parameters.args.iter().enumerate() {
                     if i > 0 {
                         result.push_str(", ");
                     }
                     result.push_str(&arg.parameter.name);
+
+                    // Note: Default values are complex to extract from the AST
+                    // For now, we'll just show the parameter name
                 }
 
                 result.push_str("):\n");
@@ -168,6 +171,63 @@ impl PythonAst {
                 Ok(format!("{}{}", indent_str, expr_code))
             }
 
+            Stmt::Import(import) => {
+                let mut result = format!("{}import ", indent_str);
+                for (i, alias) in import.names.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&alias.name);
+                    if let Some(asname) = &alias.asname {
+                        result.push_str(" as ");
+                        result.push_str(asname);
+                    }
+                }
+                Ok(result)
+            }
+
+            Stmt::ImportFrom(import_from) => {
+                let mut result = String::new();
+                result.push_str(&indent_str);
+                result.push_str("from ");
+
+                if let Some(module) = &import_from.module {
+                    result.push_str(module);
+                } else {
+                    result.push('.');
+                }
+
+                result.push_str(" import ");
+
+                for (i, alias) in import_from.names.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&alias.name);
+                    if let Some(asname) = &alias.asname {
+                        result.push_str(" as ");
+                        result.push_str(asname);
+                    }
+                }
+                Ok(result)
+            }
+
+            Stmt::Assign(assign) => {
+                let mut result = format!("{}", indent_str);
+
+                // Handle targets (left side of assignment)
+                for (i, target) in assign.targets.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&self.generate_expression(target)?);
+                }
+
+                result.push_str(" = ");
+                result.push_str(&self.generate_expression(&assign.value)?);
+                Ok(result)
+            }
+
             // Add more statement types as needed
             _ => {
                 // For unsupported statements, return a placeholder
@@ -183,8 +243,15 @@ impl PythonAst {
         match expr {
             Expr::Name(name) => Ok(name.id.to_string()),
             Expr::StringLiteral(s) => {
-                // Simple string literal handling
-                Ok(format!("\"{}\"", s.value.to_str().replace('"', "\\\"")))
+                // Handle string literals with proper escaping
+                let content = s.value.to_str();
+                let escaped = content
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"")
+                    .replace('\n', "\\n")
+                    .replace('\r', "\\r")
+                    .replace('\t', "\\t");
+                Ok(format!("\"{}\"", escaped))
             }
             Expr::NumberLiteral(n) => {
                 use ruff_python_ast::Number;
@@ -207,6 +274,47 @@ impl PythonAst {
 
                 result.push(')');
                 Ok(result)
+            }
+
+            Expr::FString(_f_string) => {
+                // F-string literal - simplified representation
+                // For now, just return a placeholder since f-strings are complex
+                Ok("f\"...\"".to_string())
+            }
+
+            Expr::BinOp(binop) => {
+                // Binary operations like +, -, *, etc.
+                let left = self.generate_expression(&binop.left)?;
+                let right = self.generate_expression(&binop.right)?;
+                let op = match binop.op {
+                    ruff_python_ast::Operator::Add => "+",
+                    ruff_python_ast::Operator::Sub => "-",
+                    ruff_python_ast::Operator::Mult => "*",
+                    ruff_python_ast::Operator::Div => "/",
+                    ruff_python_ast::Operator::Mod => "%",
+                    ruff_python_ast::Operator::Pow => "**",
+                    ruff_python_ast::Operator::LShift => "<<",
+                    ruff_python_ast::Operator::RShift => ">>",
+                    ruff_python_ast::Operator::BitOr => "|",
+                    ruff_python_ast::Operator::BitXor => "^",
+                    ruff_python_ast::Operator::BitAnd => "&",
+                    ruff_python_ast::Operator::FloorDiv => "//",
+                    ruff_python_ast::Operator::MatMult => "@",
+                };
+                Ok(format!("{} {} {}", left, op, right))
+            }
+
+            Expr::Attribute(attr) => {
+                // Attribute access like obj.attr
+                let value = self.generate_expression(&attr.value)?;
+                Ok(format!("{}.{}", value, attr.attr))
+            }
+
+            Expr::Subscript(subscript) => {
+                // Subscript access like obj[key]
+                let value = self.generate_expression(&subscript.value)?;
+                let slice = self.generate_expression(&subscript.slice)?;
+                Ok(format!("{}[{}]", value, slice))
             }
 
             // Add more expression types as needed
@@ -267,6 +375,22 @@ impl PythonAst {
                 Stmt::ClassDef(class) => Some(class),
                 _ => None,
             })
+            .collect()
+    }
+
+    /// Get names of all functions in the module
+    pub fn function_names(&self) -> Vec<String> {
+        self.functions()
+            .iter()
+            .map(|func| func.name.to_string())
+            .collect()
+    }
+
+    /// Get names of all classes in the module
+    pub fn class_names(&self) -> Vec<String> {
+        self.classes()
+            .iter()
+            .map(|class| class.name.to_string())
             .collect()
     }
 
@@ -417,6 +541,230 @@ mod tests {
         assert_eq!(classes.len(), 2);
         assert_eq!(classes[0].name.as_str(), "MyClass");
         assert_eq!(classes[1].name.as_str(), "AnotherClass");
+        Ok(())
+    }
+
+    #[test]
+    fn test_empty_ast() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("")?;
+
+        assert!(ast.is_empty());
+        assert_eq!(ast.statement_count(), 0);
+        assert_eq!(ast.function_names().len(), 0);
+        assert_eq!(ast.class_names().len(), 0);
+        assert_eq!(ast.imports().len(), 0);
+        Ok(())
+    }
+
+    #[test]
+    fn test_ast_to_string() -> Result<()> {
+        let parser = Parser::new();
+        let code = "def hello():\n    return 'world'";
+        let ast = parser.parse_string(code)?;
+
+        let result = ast.to_string()?;
+        assert!(result.contains("hello"));
+        assert!(result.contains("world"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_complex_ast_structure() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+import os
+from typing import List
+
+class DataProcessor:
+    def __init__(self, name: str):
+        self.name = name
+
+    def process(self, data: List[str]) -> List[str]:
+        return [item.upper() for item in data]
+
+def main():
+    processor = DataProcessor("test")
+    result = processor.process(["hello", "world"])
+    print(result)
+
+if __name__ == "__main__":
+    main()
+"#;
+        let ast = parser.parse_string(code)?;
+
+        assert!(!ast.is_empty());
+        assert!(ast.statement_count() > 0);
+
+        // Check functions
+        let function_names = ast.function_names();
+        assert!(function_names.contains(&"main".to_string()));
+
+        // Check classes
+        let class_names = ast.class_names();
+        assert!(class_names.contains(&"DataProcessor".to_string()));
+
+        // Check imports
+        let imports = ast.imports();
+        assert!(!imports.is_empty());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_nested_functions_and_classes() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+class OuterClass:
+    def outer_method(self):
+        def inner_function():
+            return "inner"
+        return inner_function()
+
+    class InnerClass:
+        pass
+
+def outer_function():
+    def nested_function():
+        def deeply_nested():
+            return "deep"
+        return deeply_nested()
+    return nested_function()
+"#;
+        let ast = parser.parse_string(code)?;
+
+        // Only top-level functions and classes should be counted
+        let function_names = ast.function_names();
+        assert_eq!(function_names.len(), 1);
+        assert!(function_names.contains(&"outer_function".to_string()));
+
+        let class_names = ast.class_names();
+        assert_eq!(class_names.len(), 1);
+        assert!(class_names.contains(&"OuterClass".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unicode_identifiers() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+def greet_世界():
+    return "Hello 世界!"
+
+class UnicodeClass_测试:
+    def method_测试(self):
+        return "测试"
+"#;
+        let ast = parser.parse_string(code)?;
+
+        let function_names = ast.function_names();
+        assert!(function_names.contains(&"greet_世界".to_string()));
+
+        let class_names = ast.class_names();
+        assert!(class_names.contains(&"UnicodeClass_测试".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_various_import_styles() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+import os
+import sys as system
+from pathlib import Path
+from typing import List, Dict, Optional
+from collections import defaultdict as dd, OrderedDict
+import json, csv, xml.etree.ElementTree as ET
+"#;
+        let ast = parser.parse_string(code)?;
+
+        let imports = ast.imports();
+        assert!(!imports.is_empty());
+
+        // Should have multiple import statements
+        assert!(imports.len() >= 5);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_ast_modification_tracking() -> Result<()> {
+        let parser = Parser::new();
+        let mut ast = parser.parse_string("def original(): pass")?;
+
+        // Get original source
+        let original_source = ast.source();
+        assert!(original_source.contains("original"));
+
+        // Modify the AST (this would be done by refactor operations)
+        // For now, just test that we can access the mutable AST
+        let _module = ast.module_mut();
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_large_ast() -> Result<()> {
+        let parser = Parser::new();
+
+        // Generate a large Python file
+        let mut large_code = String::new();
+        for i in 0..100 {
+            large_code.push_str(&format!("def function_{}(): return {}\n", i, i));
+            large_code.push_str(&format!("class Class_{}: pass\n", i));
+        }
+
+        let ast = parser.parse_string(&large_code)?;
+
+        assert!(!ast.is_empty());
+        assert_eq!(ast.statement_count(), 200); // 100 functions + 100 classes
+
+        let function_names = ast.function_names();
+        assert_eq!(function_names.len(), 100);
+
+        let class_names = ast.class_names();
+        assert_eq!(class_names.len(), 100);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_ast_source_preservation() -> Result<()> {
+        let parser = Parser::new();
+        let original_code = r#"def hello():
+    """A simple function."""
+    return "Hello, World!"
+
+class Greeter:
+    """A simple class."""
+
+    def greet(self):
+        return hello()
+"#;
+        let ast = parser.parse_string(original_code)?;
+
+        // The source should be preserved
+        let source = ast.source();
+        assert_eq!(source, original_code);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_ast_error_handling() -> Result<()> {
+        let parser = Parser::new();
+
+        // Test that we can create an AST and handle edge cases
+        let ast = parser.parse_string("pass")?;
+
+        // These operations should not panic
+        let _ = ast.function_names();
+        let _ = ast.class_names();
+        let _ = ast.imports();
+        let _ = ast.to_string();
+
         Ok(())
     }
 }

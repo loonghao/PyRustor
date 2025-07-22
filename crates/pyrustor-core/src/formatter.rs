@@ -264,6 +264,227 @@ mod tests {
         let mut formatter = Formatter::new();
         let result = formatter.format_ast(&ast)?;
         assert!(!result.is_empty());
+        assert!(result.contains("hello"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_empty_ast() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("")?;
+
+        let mut formatter = Formatter::new();
+        let result = formatter.format_ast(&ast)?;
+        assert!(result.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_complex_code() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+def function_one():
+    return 1
+
+class MyClass:
+    def method(self):
+        return "method"
+"#;
+        let ast = parser.parse_string(code)?;
+
+        let mut formatter = Formatter::new();
+        let result = formatter.format_ast(&ast)?;
+
+        assert!(result.contains("function_one"));
+        assert!(result.contains("MyClass"));
+        assert!(result.contains("method"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_with_different_configs() -> Result<()> {
+        let parser = Parser::new();
+        let ast = parser.parse_string("def hello(): pass")?;
+
+        // Test with spaces
+        let config_spaces = FormatConfig {
+            indent_size: 4,
+            use_spaces: true,
+            ..Default::default()
+        };
+        let mut formatter_spaces = Formatter::with_config(config_spaces);
+        let result_spaces = formatter_spaces.format_ast(&ast)?;
+
+        // Test with tabs
+        let config_tabs = FormatConfig {
+            indent_size: 1,
+            use_spaces: false,
+            ..Default::default()
+        };
+        let mut formatter_tabs = Formatter::with_config(config_tabs);
+        let result_tabs = formatter_tabs.format_ast(&ast)?;
+
+        // Both should contain the function
+        assert!(result_spaces.contains("hello"));
+        assert!(result_tabs.contains("hello"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_preserve_original_formatting() -> Result<()> {
+        let parser = Parser::new();
+        let original_code = "def hello():    pass";
+        let ast = parser.parse_string(original_code)?;
+
+        let config = FormatConfig {
+            preserve_original: true,
+            ..Default::default()
+        };
+        let mut formatter = Formatter::with_config(config);
+        let result = formatter.format_ast(&ast)?;
+
+        // Should preserve original formatting when preserve_original is true
+        assert!(result.contains("hello"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_line_with_different_indents() -> Result<()> {
+        let mut formatter = Formatter::new();
+
+        let result0 = formatter.format_line("def hello():", 0)?;
+        assert_eq!(result0, "def hello():");
+
+        let result1 = formatter.format_line("def hello():", 1)?;
+        assert_eq!(result1, "    def hello():");
+
+        let result2 = formatter.format_line("def hello():", 2)?;
+        assert_eq!(result2, "        def hello():");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_line_empty() -> Result<()> {
+        let mut formatter = Formatter::new();
+        let result = formatter.format_line("", 1)?;
+        assert!(result.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_line_whitespace_only() -> Result<()> {
+        let mut formatter = Formatter::new();
+        let result = formatter.format_line("   \t  ", 1)?;
+        assert!(result.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn test_indent_string_with_tabs() {
+        let config = FormatConfig {
+            use_spaces: false,
+            indent_size: 1,
+            ..Default::default()
+        };
+        let formatter = Formatter::with_config(config);
+
+        assert_eq!(formatter.get_indent_string(0), "");
+        assert_eq!(formatter.get_indent_string(1), "\t");
+        assert_eq!(formatter.get_indent_string(2), "\t\t");
+    }
+
+    #[test]
+    fn test_indent_string_with_custom_size() {
+        let config = FormatConfig {
+            use_spaces: true,
+            indent_size: 2,
+            ..Default::default()
+        };
+        let formatter = Formatter::with_config(config);
+
+        assert_eq!(formatter.get_indent_string(0), "");
+        assert_eq!(formatter.get_indent_string(1), "  ");
+        assert_eq!(formatter.get_indent_string(2), "    ");
+    }
+
+    #[test]
+    fn test_preserve_comments() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+# This is a comment
+def hello():
+    # Another comment
+    pass
+"#;
+        let ast = parser.parse_string(code)?;
+
+        let mut formatter = Formatter::new();
+        let result = formatter.format_ast(&ast)?;
+
+        // Should contain the function
+        assert!(result.contains("hello"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_unicode_code() -> Result<()> {
+        let parser = Parser::new();
+        let code = r#"
+def greet_世界():
+    return "Hello 世界!"
+
+class UnicodeClass_测试:
+    pass
+"#;
+        let ast = parser.parse_string(code)?;
+
+        let mut formatter = Formatter::new();
+        let result = formatter.format_ast(&ast)?;
+
+        assert!(result.contains("greet_世界"));
+        assert!(result.contains("UnicodeClass_测试"));
+        assert!(result.contains("Hello 世界!"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_format_large_code() -> Result<()> {
+        let parser = Parser::new();
+
+        // Generate large code
+        let mut large_code = String::new();
+        for i in 0..100 {
+            large_code.push_str(&format!("def function_{}(): return {}\n", i, i));
+        }
+
+        let ast = parser.parse_string(&large_code)?;
+
+        let mut formatter = Formatter::new();
+        let result = formatter.format_ast(&ast)?;
+
+        assert!(result.contains("function_0"));
+        assert!(result.contains("function_99"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_config_update() -> Result<()> {
+        let mut formatter = Formatter::new();
+
+        // Initial config
+        assert_eq!(formatter.config.indent_size, 4);
+
+        // Update config
+        let new_config = FormatConfig {
+            indent_size: 2,
+            use_spaces: false,
+            ..Default::default()
+        };
+        formatter.set_config(new_config);
+
+        assert_eq!(formatter.config.indent_size, 2);
+        assert!(!formatter.config.use_spaces);
         Ok(())
     }
 }

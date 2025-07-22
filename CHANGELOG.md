@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.1...pyrustor-v0.1.2) (2025-07-22)
+
+
+### Bug Fixes
+
+* add manifest-path to all ABI3 builds and unify Python versions ([c7e2338](https://github.com/loonghao/PyRustor/commit/c7e23387cf4a68331339ec2839b766c4a37c05c5))
+* add missing bindings configuration to crate pyproject.toml ([a6c5139](https://github.com/loonghao/PyRustor/commit/a6c51397f8ee14f88158e0a63e90e8802156a333))
+* add python-packages configuration to include Python source files ([db93e08](https://github.com/loonghao/PyRustor/commit/db93e08e74d726c87aa427f371a9c89b4edb8ce3))
+* comprehensive macOS ABI3 build fixes ([b0b3c36](https://github.com/loonghao/PyRustor/commit/b0b3c3683b1baea391ae918e504be5920e91cd4c))
+* improve wheel building and testing infrastructure ([a6ebcfe](https://github.com/loonghao/PyRustor/commit/a6ebcfe0ab605ee1f82c8ae076cc0e589c7a0ced))
+* simplify macOS ABI3 build configuration ([a51f900](https://github.com/loonghao/PyRustor/commit/a51f900dc9a56ae97e0b69d7698992b851ab57e5))
+
+
+### Code Refactoring
+
+* simplify project structure and fix wheel packaging ([36cdaf2](https://github.com/loonghao/PyRustor/commit/36cdaf22a8a4224f2ffc246a2a3fe16e9c0e1924))
+
 ## [0.1.1](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.0...pyrustor-v0.1.1) (2025-07-22)
 
 

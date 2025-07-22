@@ -65,49 +65,148 @@ jobs:
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.11"
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      
+
       - name: Install dependencies
         run: uv sync --group dev
-      
+
+      - name: Check version consistency
+        run: |
+          echo "🔍 Checking version consistency across all files..."
+
+          # Get version from release-please manifest
+          RELEASE_VERSION=$(python -c "import json; print(json.load(open('.release-please-manifest.json'))['.'])")
+          echo "Release-please version: $RELEASE_VERSION"
+
+          # Get version from Cargo.toml
+          CARGO_VERSION=$(python -c "import tomllib; print(tomllib.load(open('Cargo.toml', 'rb'))['workspace']['package']['version'])")
+          echo "Cargo.toml version: $CARGO_VERSION"
+
+          # Get version from Python package
+          PYTHON_VERSION=$(python -c "import sys; sys.path.insert(0, 'python'); import pyrustor; print(pyrustor.__version__)")
+          echo "Python package version: $PYTHON_VERSION"
+
+          # Check if all versions match
+          if [ "$RELEASE_VERSION" != "$CARGO_VERSION" ] || [ "$RELEASE_VERSION" != "$PYTHON_VERSION" ]; then
+            echo "❌ Version mismatch detected!"
+            echo "  Release-please: $RELEASE_VERSION"
+            echo "  Cargo.toml: $CARGO_VERSION"
+            echo "  Python package: $PYTHON_VERSION"
+            echo "Please ensure all version files are synchronized."
+            exit 1
+          else
+            echo "✅ All versions are consistent: $RELEASE_VERSION"
+          fi
+        shell: bash
+
       - name: Check Rust formatting
         run: cargo fmt --all -- --check
-      
+
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings -A clippy::uninlined-format-args
-      
+
       - name: Run ruff check
         run: uv run ruff check .
-      
+
       - name: Run ruff format check
         run: uv run ruff format --check .
+
+  # Wheel building and installation tests for PR validation
+  wheel-test:
+    name: Wheel Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.11", "3.13"]
+        include:
+          # Test additional Python versions on Ubuntu only to save CI time
+          - os: ubuntu-latest
+            python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install maturin
+        run: uv pip install maturin --system
+
+      - name: Build wheel
+        run: maturin build --release --out dist --find-interpreter
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: List built wheels
+        run: |
+          echo "Built wheels:"
+          ls -la dist/
+          echo "Wheel contents:"
+          python -m zipfile -l dist/*.whl || true
+        shell: bash
+
+      - name: Test wheel installation in clean environment
+        run: |
+          # Create a clean virtual environment
+          uv venv test-env --python ${{ matrix.python-version }}
+
+          # Install the wheel in the clean environment
+          uv pip install pyrustor --find-links dist --force-reinstall --python test-env
+
+          # Test basic functionality
+          uv run --python test-env python -c "import pyrustor; print('✅ PyRustor imported successfully')"
+          uv run --python test-env python -c "import pyrustor; parser = pyrustor.Parser(); print('✅ Parser created successfully')"
+          uv run --python test-env python -c "import pyrustor; print('✅ Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Test wheel with dependencies
+        run: |
+          # Install test dependencies in the clean environment
+          uv pip install pytest --python test-env
+
+          # Run the wheel integrity test script
+          uv run --python test-env python scripts/test_wheel_integrity.py
+        env:
+          PYTHONUNBUFFERED: 1
 
   # Documentation tests
   docs:
     name: Documentation
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-      
+
       - name: Run doc tests
         run: cargo test --doc
-      
+
       - name: Check documentation
         run: cargo doc --no-deps --document-private-items
 

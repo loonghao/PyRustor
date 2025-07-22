@@ -60,6 +60,7 @@ Documentation = "https://github.com/loonghao/PyRustor"
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "python"
+python-packages = ["pyrustor"]
 module-name = "pyrustor._pyrustor"
 bindings = "pyo3"
 manifest-path = "crates/pyrustor-python/Cargo.toml"

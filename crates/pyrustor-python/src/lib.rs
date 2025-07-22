@@ -192,7 +192,7 @@ impl Refactor {
     }
 
     /// Get the refactored code as string
-    fn to_string(&mut self) -> PyResult<String> {
+    fn get_code(&mut self) -> PyResult<String> {
         match self.inner.to_string() {
             Ok(s) => Ok(s),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
@@ -280,7 +280,7 @@ impl Refactor {
     }
 
     /// Convert to string with optional formatting
-    fn to_string_with_format(&mut self, apply_formatting: bool) -> PyResult<String> {
+    fn get_code_with_format(&mut self, apply_formatting: bool) -> PyResult<String> {
         match self.inner.to_string_with_format(apply_formatting) {
             Ok(result) => Ok(result),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(

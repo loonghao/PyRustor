@@ -153,10 +153,13 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install maturin
-        run: uv pip install maturin
+        run: |
+          # Create a temporary virtual environment for maturin
+          uv venv .maturin-env --python ${{ matrix.python-version }}
+          uv pip install maturin --python .maturin-env
 
       - name: Build wheel
-        run: maturin build --release --out dist --find-interpreter
+        run: uv run --python .maturin-env maturin build --release --out dist --find-interpreter
         env:
           RUST_BACKTRACE: 1
 

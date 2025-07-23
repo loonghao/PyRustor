@@ -262,7 +262,7 @@ from typing import List, Dict
         let ast = parser.parse_string(code)?;
 
         assert!(!ast.is_empty());
-        let imports = ast.imports();
+        let imports = ast.find_imports(None);
         assert!(!imports.is_empty());
         Ok(())
     }
@@ -352,7 +352,7 @@ if __name__ == '__main__':
         let classes = ast.class_names();
         assert!(classes.contains(&"DataProcessor".to_string()));
 
-        let imports = ast.imports();
+        let imports = ast.find_imports(None);
         assert!(!imports.is_empty());
 
         Ok(())

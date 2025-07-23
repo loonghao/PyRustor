@@ -6,15 +6,9 @@
 
 use pyo3::prelude::*;
 use pyrustor_core::{
-    Parser as CoreParser,
-    PythonAst as CoreAst,
-    Refactor as CoreRefactor,
-    AstNodeRef as CoreAstNodeRef,
-    ImportNode as CoreImportNode,
-    CallNode as CoreCallNode,
-    TryExceptNode as CoreTryExceptNode,
-    AssignmentNode as CoreAssignmentNode,
-    CodeGenerator as CoreCodeGenerator,
+    AssignmentNode as CoreAssignmentNode, AstNodeRef as CoreAstNodeRef, CallNode as CoreCallNode,
+    CodeGenerator as CoreCodeGenerator, ImportNode as CoreImportNode, Parser as CoreParser,
+    PythonAst as CoreAst, Refactor as CoreRefactor, TryExceptNode as CoreTryExceptNode,
 };
 use std::path::PathBuf;
 
@@ -123,12 +117,12 @@ impl PythonAst {
 
     /// Get import information
     fn imports(&self) -> Vec<String> {
-        self.inner.imports().iter().map(|i| i.to_string()).collect()
+        self.inner.find_imports(None).iter().map(|i| i.module.clone()).collect()
     }
 
     /// Convert AST back to string
     fn to_string(&self) -> PyResult<String> {
-        match self.inner.to_string() {
+        match self.inner.to_code() {
             Ok(s) => Ok(s),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Format error: {}",
@@ -162,7 +156,7 @@ impl PythonAst {
     /// Find function calls
     fn find_function_calls(&self, function_name: &str) -> Vec<CallNode> {
         self.inner
-            .find_function_calls(function_name)
+            .find_function_calls(Some(function_name))
             .into_iter()
             .map(|node| CallNode { inner: node })
             .collect()
@@ -222,8 +216,16 @@ impl Refactor {
 
     /// Rename a function with optional error on not found
     #[pyo3(signature = (old_name, new_name, error_if_not_found=true))]
-    fn rename_function_optional(&mut self, old_name: &str, new_name: &str, error_if_not_found: bool) -> PyResult<()> {
-        match self.inner.rename_function_optional(old_name, new_name, error_if_not_found) {
+    fn rename_function_optional(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        error_if_not_found: bool,
+    ) -> PyResult<()> {
+        match self
+            .inner
+            .rename_function_optional(old_name, new_name, error_if_not_found)
+        {
             Ok(()) => Ok(()),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Refactor error: {}",
@@ -245,8 +247,16 @@ impl Refactor {
 
     /// Rename a class with optional error on not found
     #[pyo3(signature = (old_name, new_name, error_if_not_found=true))]
-    fn rename_class_optional(&mut self, old_name: &str, new_name: &str, error_if_not_found: bool) -> PyResult<()> {
-        match self.inner.rename_class_optional(old_name, new_name, error_if_not_found) {
+    fn rename_class_optional(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        error_if_not_found: bool,
+    ) -> PyResult<()> {
+        match self
+            .inner
+            .rename_class_optional(old_name, new_name, error_if_not_found)
+        {
             Ok(()) => Ok(()),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Refactor error: {}",
@@ -501,8 +511,16 @@ impl Refactor {
     }
 
     /// Replace code in a specific line range (bottom-level API)
-    fn replace_code_range(&mut self, start_line: usize, end_line: usize, new_code: &str) -> PyResult<()> {
-        match self.inner.replace_code_range(start_line, end_line, new_code) {
+    fn replace_code_range(
+        &mut self,
+        start_line: usize,
+        end_line: usize,
+        new_code: &str,
+    ) -> PyResult<()> {
+        match self
+            .inner
+            .replace_code_range(start_line, end_line, new_code)
+        {
             Ok(()) => Ok(()),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Replace range error: {}",
@@ -545,7 +563,10 @@ impl AstNodeRef {
     }
 
     fn __repr__(&self) -> String {
-        format!("AstNodeRef(type='{}', path={:?})", self.inner.node_type, self.inner.path)
+        format!(
+            "AstNodeRef(type='{}', path={:?})",
+            self.inner.node_type, self.inner.path
+        )
     }
 }
 
@@ -579,7 +600,10 @@ impl ImportNode {
     }
 
     fn __repr__(&self) -> String {
-        format!("ImportNode(module='{}', items={:?})", self.inner.module, self.inner.items)
+        format!(
+            "ImportNode(module='{}', items={:?})",
+            self.inner.module, self.inner.items
+        )
     }
 }
 
@@ -613,7 +637,10 @@ impl CallNode {
     }
 
     fn __repr__(&self) -> String {
-        format!("CallNode(function='{}', args={:?})", self.inner.function_name, self.inner.args)
+        format!(
+            "CallNode(function='{}', args={:?})",
+            self.inner.function_name, self.inner.args
+        )
     }
 }
 
@@ -675,7 +702,10 @@ impl AssignmentNode {
     }
 
     fn __repr__(&self) -> String {
-        format!("AssignmentNode(target='{}', value='{}')", self.inner.target, self.inner.value)
+        format!(
+            "AssignmentNode(target='{}', value='{}')",
+            self.inner.target, self.inner.value
+        )
     }
 }
 
@@ -697,7 +727,12 @@ impl CodeGenerator {
 
     /// Generate an import statement
     #[pyo3(signature = (module, items=None, alias=None))]
-    fn create_import(&self, module: &str, items: Option<Vec<String>>, alias: Option<&str>) -> PyResult<String> {
+    fn create_import(
+        &self,
+        module: &str,
+        items: Option<Vec<String>>,
+        alias: Option<&str>,
+    ) -> PyResult<String> {
         match self.inner.create_import(module, items, alias) {
             Ok(code) => Ok(code),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
@@ -730,8 +765,16 @@ impl CodeGenerator {
     }
 
     /// Generate a try-except block
-    fn create_try_except(&self, try_body: &str, except_type: &str, except_body: &str) -> PyResult<String> {
-        match self.inner.create_try_except(try_body, except_type, except_body) {
+    fn create_try_except(
+        &self,
+        try_body: &str,
+        except_type: &str,
+        except_body: &str,
+    ) -> PyResult<String> {
+        match self
+            .inner
+            .create_try_except(try_body, except_type, except_body)
+        {
             Ok(code) => Ok(code),
             Err(e) => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Code generation error: {}",

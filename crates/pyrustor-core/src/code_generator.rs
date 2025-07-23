@@ -13,26 +13,26 @@ impl CodeGenerator {
     }
 
     /// Generate an import statement
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// // Simple import: import os
     /// let import1 = gen.create_import("os", None, None).unwrap();
     /// assert_eq!(import1, "import os");
-    /// 
+    ///
     /// // Import with alias: import json as js
     /// let import2 = gen.create_import("json", None, Some("js")).unwrap();
     /// assert_eq!(import2, "import json as js");
-    /// 
+    ///
     /// // From import: from pathlib import Path
     /// let import3 = gen.create_import("pathlib", Some(vec!["Path".to_string()]), None).unwrap();
     /// assert_eq!(import3, "from pathlib import Path");
-    /// 
+    ///
     /// // Multiple from import: from typing import List, Dict
     /// let import4 = gen.create_import("typing", Some(vec!["List".to_string(), "Dict".to_string()]), None).unwrap();
     /// assert_eq!(import4, "from typing import List, Dict");
@@ -57,17 +57,17 @@ impl CodeGenerator {
     }
 
     /// Generate an assignment statement
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let assignment = gen.create_assignment("x", "42").unwrap();
     /// assert_eq!(assignment, "x = 42");
-    /// 
+    ///
     /// let complex_assignment = gen.create_assignment("result", "func(arg1, arg2)").unwrap();
     /// assert_eq!(complex_assignment, "result = func(arg1, arg2)");
     /// ```
@@ -76,20 +76,20 @@ impl CodeGenerator {
     }
 
     /// Generate a function call
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let call1 = gen.create_function_call("print", vec!["'hello'".to_string()]).unwrap();
     /// assert_eq!(call1, "print('hello')");
-    /// 
+    ///
     /// let call2 = gen.create_function_call("max", vec!["a".to_string(), "b".to_string()]).unwrap();
     /// assert_eq!(call2, "max(a, b)");
-    /// 
+    ///
     /// let call3 = gen.create_function_call("func", vec![]).unwrap();
     /// assert_eq!(call3, "func()");
     /// ```
@@ -99,20 +99,20 @@ impl CodeGenerator {
     }
 
     /// Generate a try-except block
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let try_except = gen.create_try_except(
     ///     "result = risky_operation()",
     ///     "ValueError",
     ///     "result = default_value"
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "try:\n    result = risky_operation()\nexcept ValueError:\n    result = default_value";
     /// assert_eq!(try_except, expected);
     /// ```
@@ -129,48 +129,43 @@ impl CodeGenerator {
     }
 
     /// Generate a function definition
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let func = gen.create_function_def(
     ///     "greet",
     ///     vec!["name".to_string()],
     ///     "return f'Hello, {name}!'"
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "def greet(name):\n    return f'Hello, {name}!'";
     /// assert_eq!(func, expected);
     /// ```
-    pub fn create_function_def(
-        &self,
-        name: &str,
-        args: Vec<String>,
-        body: &str,
-    ) -> Result<String> {
+    pub fn create_function_def(&self, name: &str, args: Vec<String>, body: &str) -> Result<String> {
         let args_str = args.join(", ");
         Ok(format!("def {}({}):\n    {}", name, args_str, body))
     }
 
     /// Generate a class definition
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let class = gen.create_class_def(
     ///     "MyClass",
     ///     Some(vec!["BaseClass".to_string()]),
     ///     "pass"
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "class MyClass(BaseClass):\n    pass";
     /// assert_eq!(class, expected);
     /// ```
@@ -193,20 +188,20 @@ impl CodeGenerator {
     }
 
     /// Generate an if statement
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let if_stmt = gen.create_if_statement(
     ///     "x > 0",
     ///     "print('positive')",
     ///     Some("print('not positive')")
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "if x > 0:\n    print('positive')\nelse:\n    print('not positive')";
     /// assert_eq!(if_stmt, expected);
     /// ```
@@ -227,20 +222,20 @@ impl CodeGenerator {
     }
 
     /// Generate a for loop
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let for_loop = gen.create_for_loop(
     ///     "item",
     ///     "items",
     ///     "print(item)"
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "for item in items:\n    print(item)";
     /// assert_eq!(for_loop, expected);
     /// ```
@@ -249,19 +244,19 @@ impl CodeGenerator {
     }
 
     /// Generate a while loop
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let while_loop = gen.create_while_loop(
     ///     "x > 0",
     ///     "x -= 1"
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "while x > 0:\n    x -= 1";
     /// assert_eq!(while_loop, expected);
     /// ```
@@ -270,21 +265,21 @@ impl CodeGenerator {
     }
 
     /// Generate a list comprehension
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let list_comp = gen.create_list_comprehension(
     ///     "x * 2",
     ///     "x",
     ///     "range(10)",
     ///     Some("x % 2 == 0")
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "[x * 2 for x in range(10) if x % 2 == 0]";
     /// assert_eq!(list_comp, expected);
     /// ```
@@ -306,14 +301,14 @@ impl CodeGenerator {
     }
 
     /// Generate a dictionary comprehension
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use pyrustor_core::code_generator::CodeGenerator;
-    /// 
+    ///
     /// let gen = CodeGenerator::new();
-    /// 
+    ///
     /// let dict_comp = gen.create_dict_comprehension(
     ///     "x",
     ///     "x * 2",
@@ -321,7 +316,7 @@ impl CodeGenerator {
     ///     "range(5)",
     ///     None
     /// ).unwrap();
-    /// 
+    ///
     /// let expected = "{x: x * 2 for x in range(5)}";
     /// assert_eq!(dict_comp, expected);
     /// ```
@@ -414,10 +409,7 @@ mod tests {
                 .unwrap(),
             "max(a, b)"
         );
-        assert_eq!(
-            gen.create_function_call("func", vec![]).unwrap(),
-            "func()"
-        );
+        assert_eq!(gen.create_function_call("func", vec![]).unwrap(), "func()");
     }
 
     #[test]
@@ -432,7 +424,8 @@ mod tests {
             )
             .unwrap();
 
-        let expected = "try:\n    result = risky_operation()\nexcept ValueError:\n    result = default_value";
+        let expected =
+            "try:\n    result = risky_operation()\nexcept ValueError:\n    result = default_value";
         assert_eq!(result, expected);
     }
 }

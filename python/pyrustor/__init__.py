@@ -14,13 +14,29 @@ Example:
     >>> print(refactor.get_code())
 """
 
-from ._pyrustor import Parser, PythonAst, Refactor
+from ._pyrustor import (
+    Parser,
+    PythonAst,
+    Refactor,
+    AstNodeRef,
+    ImportNode,
+    CallNode,
+    TryExceptNode,
+    AssignmentNode,
+    CodeGenerator,
+)
 
 __version__ = "0.1.2"
 
 __all__ = [
     "Parser",
-    "PythonAst", 
+    "PythonAst",
     "Refactor",
+    "AstNodeRef",
+    "ImportNode",
+    "CallNode",
+    "TryExceptNode",
+    "AssignmentNode",
+    "CodeGenerator",
     "__version__",
 ]

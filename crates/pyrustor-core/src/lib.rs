@@ -33,13 +33,15 @@
 //! ```
 
 pub mod ast;
+pub mod code_generator;
 pub mod error;
 pub mod formatter;
 pub mod parser;
 pub mod refactor;
 
 // Re-export main types for convenience
-pub use ast::{AstNode, PythonAst};
+pub use ast::{AstNode, PythonAst, AstNodeRef, ImportNode, CallNode, TryExceptNode, AssignmentNode};
+pub use code_generator::CodeGenerator;
 pub use error::{PyRustorError, Result};
 pub use formatter::Formatter;
 pub use parser::Parser;

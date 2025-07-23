@@ -1,6 +1,12 @@
 //! Code refactoring and transformation utilities
 
-use crate::{ast::PythonAst, error::Result, formatter::Formatter, PyRustorError};
+use crate::{
+    ast::{PythonAst, AstNodeRef, ImportNode, CallNode, TryExceptNode, AssignmentNode},
+    code_generator::CodeGenerator,
+    error::Result,
+    formatter::Formatter,
+    PyRustorError
+};
 use ruff_python_ast::{Identifier, Stmt};
 use ruff_text_size::TextRange;
 use std::collections::HashMap;
@@ -92,28 +98,20 @@ impl Refactor {
     /// # Ok::<(), Box<dyn std::error::Error>>(())
     /// ```
     pub fn rename_function(&mut self, old_name: &str, new_name: &str) -> Result<()> {
+        self.rename_function_optional(old_name, new_name, true)
+    }
+
+    /// Rename a function throughout the code with optional error on not found
+    pub fn rename_function_optional(&mut self, old_name: &str, new_name: &str, error_if_not_found: bool) -> Result<()> {
         let mut found = false;
 
-        // Find and rename function definitions
-        for stmt in &mut self.ast.module_mut().body {
-            if let Stmt::FunctionDef(func) = stmt {
-                if func.name.as_str() == old_name {
-                    func.name = Identifier::new(new_name, TextRange::default());
-                    found = true;
-
-                    self.changes.push(RefactorChange {
-                        change_type: ChangeType::FunctionRenamed {
-                            old_name: old_name.to_string(),
-                            new_name: new_name.to_string(),
-                        },
-                        description: format!("Renamed function '{old_name}' to '{new_name}'"),
-                        location: Some(SourceLocation { line: 0, column: 0 }), // TODO: Get actual location
-                    });
-                }
-            }
+        // Find and rename function definitions recursively
+        {
+            let body = &mut self.ast.module_mut().body;
+            Self::rename_function_recursive_static(body, old_name, new_name, &mut found, &mut self.changes)?;
         }
 
-        if !found {
+        if !found && error_if_not_found {
             return Err(PyRustorError::refactor_error(format!(
                 "Function '{old_name}' not found"
             )));
@@ -121,6 +119,41 @@ impl Refactor {
 
         // TODO: Also rename function calls throughout the code
 
+        Ok(())
+    }
+
+    /// Recursively rename functions in statements (including class methods)
+    fn rename_function_recursive_static(
+        stmts: &mut [Stmt],
+        old_name: &str,
+        new_name: &str,
+        found: &mut bool,
+        changes: &mut Vec<RefactorChange>,
+    ) -> Result<()> {
+        for stmt in stmts {
+            match stmt {
+                Stmt::FunctionDef(func) => {
+                    if func.name.as_str() == old_name {
+                        func.name = Identifier::new(new_name, TextRange::default());
+                        *found = true;
+
+                        changes.push(RefactorChange {
+                            change_type: ChangeType::FunctionRenamed {
+                                old_name: old_name.to_string(),
+                                new_name: new_name.to_string(),
+                            },
+                            description: format!("Renamed function '{old_name}' to '{new_name}'"),
+                            location: Some(SourceLocation { line: 0, column: 0 }), // TODO: Get actual location
+                        });
+                    }
+                }
+                Stmt::ClassDef(class) => {
+                    // Recursively search in class body for methods
+                    Self::rename_function_recursive_static(&mut class.body, old_name, new_name, found, changes)?;
+                }
+                _ => {}
+            }
+        }
         Ok(())
     }
 
@@ -140,33 +173,62 @@ impl Refactor {
 
     /// Rename a class throughout the code
     pub fn rename_class(&mut self, old_name: &str, new_name: &str) -> Result<()> {
+        self.rename_class_optional(old_name, new_name, true)
+    }
+
+    /// Rename a class throughout the code with optional error on not found
+    pub fn rename_class_optional(&mut self, old_name: &str, new_name: &str, error_if_not_found: bool) -> Result<()> {
         let mut found = false;
 
-        // Find and rename class definitions
-        for stmt in &mut self.ast.module_mut().body {
-            if let Stmt::ClassDef(class) = stmt {
-                if class.name.as_str() == old_name {
-                    class.name = Identifier::new(new_name, TextRange::default());
-                    found = true;
-
-                    self.changes.push(RefactorChange {
-                        change_type: ChangeType::ClassRenamed {
-                            old_name: old_name.to_string(),
-                            new_name: new_name.to_string(),
-                        },
-                        description: format!("Renamed class '{old_name}' to '{new_name}'"),
-                        location: Some(SourceLocation { line: 0, column: 0 }),
-                    });
-                }
-            }
+        // Find and rename class definitions recursively
+        {
+            let body = &mut self.ast.module_mut().body;
+            Self::rename_class_recursive_static(body, old_name, new_name, &mut found, &mut self.changes)?;
         }
 
-        if !found {
+        if !found && error_if_not_found {
             return Err(PyRustorError::refactor_error(format!(
                 "Class '{old_name}' not found"
             )));
         }
 
+        Ok(())
+    }
+
+    /// Recursively rename classes in statements (including nested classes)
+    fn rename_class_recursive_static(
+        stmts: &mut [Stmt],
+        old_name: &str,
+        new_name: &str,
+        found: &mut bool,
+        changes: &mut Vec<RefactorChange>,
+    ) -> Result<()> {
+        for stmt in stmts {
+            match stmt {
+                Stmt::ClassDef(class) => {
+                    if class.name.as_str() == old_name {
+                        class.name = Identifier::new(new_name, TextRange::default());
+                        *found = true;
+
+                        changes.push(RefactorChange {
+                            change_type: ChangeType::ClassRenamed {
+                                old_name: old_name.to_string(),
+                                new_name: new_name.to_string(),
+                            },
+                            description: format!("Renamed class '{old_name}' to '{new_name}'"),
+                            location: Some(SourceLocation { line: 0, column: 0 }),
+                        });
+                    }
+                    // Also search for nested classes within this class
+                    Self::rename_class_recursive_static(&mut class.body, old_name, new_name, found, changes)?;
+                }
+                Stmt::FunctionDef(func) => {
+                    // Search for nested classes within functions
+                    Self::rename_class_recursive_static(&mut func.body, old_name, new_name, found, changes)?;
+                }
+                _ => {}
+            }
+        }
         Ok(())
     }
 
@@ -437,81 +499,155 @@ impl Refactor {
         Ok(())
     }
 
-    /// Modernize pkg_resources version detection to use modern package version utilities
-    pub fn modernize_pkg_resources_version(
-        &mut self,
-        target_module: &str,
-        target_function: &str,
-    ) -> Result<()> {
-        // This refactoring transforms:
-        // ```python
-        // from pkg_resources import DistributionNotFound
-        // from pkg_resources import get_distribution
-        //
-        // try:
-        //     __version__ = get_distribution(__name__).version
-        // except DistributionNotFound:
-        //     __version__ = "0.0.0-dev.1"
-        // ```
-        //
-        // Into:
-        // ```python
-        // from xxx_pyharmony import get_package_version
-        //
-        // __version__ = get_package_version(__name__)
-        // ```
+    // ========== Bottom-level API for advanced users ==========
 
-        let mut changes_made = 0;
+    /// Get access to the underlying AST for low-level operations
+    pub fn ast(&self) -> &PythonAst {
+        &self.ast
+    }
 
-        // Step 1: Check if we have pkg_resources imports
-        let imports = self.ast.imports();
-        let has_pkg_resources = imports.iter().any(|imp| {
-            imp.from_module
-                .as_ref()
-                .is_some_and(|m| m == "pkg_resources")
-        });
+    /// Find nodes matching specific criteria (bottom-level API)
+    pub fn find_nodes(&self, node_type: Option<&str>) -> Vec<AstNodeRef> {
+        self.ast.find_nodes(node_type)
+    }
 
-        if !has_pkg_resources {
-            return Ok(()); // Nothing to modernize
-        }
+    /// Find import statements
+    pub fn find_imports(&self, module_pattern: Option<&str>) -> Vec<ImportNode> {
+        self.ast.find_imports(module_pattern)
+    }
 
-        // Step 2: Replace pkg_resources imports
-        self.replace_import("pkg_resources", target_module)?;
-        changes_made += 1;
+    /// Find function calls
+    pub fn find_function_calls(&self, function_name: &str) -> Vec<CallNode> {
+        self.ast.find_function_calls(function_name)
+    }
 
-        // Step 3: Apply the transformation (placeholder for now)
+    /// Find try-except blocks
+    pub fn find_try_except_blocks(&self, exception_type: Option<&str>) -> Vec<TryExceptNode> {
+        self.ast.find_try_except_blocks(exception_type)
+    }
+
+    /// Find assignment statements
+    pub fn find_assignments(&self, target_pattern: Option<&str>) -> Vec<AssignmentNode> {
+        self.ast.find_assignments(target_pattern)
+    }
+
+    /// Replace a specific AST node with new code (bottom-level API)
+    pub fn replace_node(&mut self, node_ref: &AstNodeRef, _new_code: &str) -> Result<()> {
+        // This is a placeholder implementation
         // In a full implementation, this would:
-        // 1. Find try-except blocks with DistributionNotFound
-        // 2. Replace get_distribution(__name__).version with get_package_version(__name__)
-        // 3. Remove the try-except wrapper
-        // 4. Remove unused DistributionNotFound import
+        // 1. Navigate to the node using the path
+        // 2. Parse the new_code into AST nodes
+        // 3. Replace the node in the AST
+        // 4. Update source tracking
 
         self.changes.push(RefactorChange {
-            change_type: ChangeType::SyntaxModernized {
-                description: format!(
-                    "Modernized pkg_resources version detection to use {target_module}::{target_function}"
-                ),
+            change_type: ChangeType::Custom {
+                description: format!("Replaced {} node with new code", node_ref.node_type),
             },
-            description: "Modernized version detection pattern".to_string(),
-            location: None,
+            description: format!("Node replacement: {}", node_ref.node_type),
+            location: node_ref.location.as_ref().map(|loc| SourceLocation {
+                line: loc.line,
+                column: loc.column,
+            }),
         });
-        changes_made += 1;
-
-        if changes_made > 0 {
-            self.changes.push(RefactorChange {
-                change_type: ChangeType::Custom {
-                    description: format!(
-                        "Applied {changes_made} pkg_resources modernization changes"
-                    ),
-                },
-                description: format!(
-                    "Completed pkg_resources modernization ({changes_made} changes)"
-                ),
-                location: None,
-            });
-        }
 
         Ok(())
+    }
+
+    /// Remove a specific AST node (bottom-level API)
+    pub fn remove_node(&mut self, node_ref: &AstNodeRef) -> Result<()> {
+        // This is a placeholder implementation
+        // In a full implementation, this would:
+        // 1. Navigate to the node using the path
+        // 2. Remove the node from its parent
+        // 3. Update source tracking
+
+        self.changes.push(RefactorChange {
+            change_type: ChangeType::Custom {
+                description: format!("Removed {} node", node_ref.node_type),
+            },
+            description: format!("Node removal: {}", node_ref.node_type),
+            location: node_ref.location.as_ref().map(|loc| SourceLocation {
+                line: loc.line,
+                column: loc.column,
+            }),
+        });
+
+        Ok(())
+    }
+
+    /// Insert code before a specific AST node (bottom-level API)
+    pub fn insert_before(&mut self, node_ref: &AstNodeRef, _new_code: &str) -> Result<()> {
+        // This is a placeholder implementation
+        // In a full implementation, this would:
+        // 1. Navigate to the node using the path
+        // 2. Parse the new_code into AST nodes
+        // 3. Insert the nodes before the target node
+        // 4. Update source tracking
+
+        self.changes.push(RefactorChange {
+            change_type: ChangeType::Custom {
+                description: format!("Inserted code before {} node", node_ref.node_type),
+            },
+            description: format!("Code insertion before: {}", node_ref.node_type),
+            location: node_ref.location.as_ref().map(|loc| SourceLocation {
+                line: loc.line,
+                column: loc.column,
+            }),
+        });
+
+        Ok(())
+    }
+
+    /// Insert code after a specific AST node (bottom-level API)
+    pub fn insert_after(&mut self, node_ref: &AstNodeRef, _new_code: &str) -> Result<()> {
+        // This is a placeholder implementation
+        // In a full implementation, this would:
+        // 1. Navigate to the node using the path
+        // 2. Parse the new_code into AST nodes
+        // 3. Insert the nodes after the target node
+        // 4. Update source tracking
+
+        self.changes.push(RefactorChange {
+            change_type: ChangeType::Custom {
+                description: format!("Inserted code after {} node", node_ref.node_type),
+            },
+            description: format!("Code insertion after: {}", node_ref.node_type),
+            location: node_ref.location.as_ref().map(|loc| SourceLocation {
+                line: loc.line,
+                column: loc.column,
+            }),
+        });
+
+        Ok(())
+    }
+
+    /// Replace code in a specific line range (bottom-level API)
+    pub fn replace_code_range(&mut self, start_line: usize, end_line: usize, _new_code: &str) -> Result<()> {
+        // This is a placeholder implementation
+        // In a full implementation, this would:
+        // 1. Identify the AST nodes in the line range
+        // 2. Parse the new_code into AST nodes
+        // 3. Replace the nodes in the range
+        // 4. Update source tracking
+
+        self.changes.push(RefactorChange {
+            change_type: ChangeType::Custom {
+                description: format!("Replaced code in lines {}-{}", start_line, end_line),
+            },
+            description: format!("Range replacement: lines {}-{}", start_line, end_line),
+            location: Some(SourceLocation {
+                line: start_line,
+                column: 0,
+            }),
+        });
+
+        Ok(())
+    }
+
+    /// Get a code generator for creating Python code snippets (bottom-level API)
+    pub fn code_generator(&self) -> CodeGenerator {
+        CodeGenerator::new()
     }
 
     /// Modernize string formatting patterns
@@ -599,11 +735,6 @@ impl Refactor {
         });
 
         Ok(())
-    }
-
-    /// Get the refactored AST
-    pub fn ast(&self) -> &PythonAst {
-        &self.ast
     }
 
     /// Get a mutable reference to the AST

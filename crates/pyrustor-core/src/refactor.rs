@@ -1,11 +1,11 @@
 //! Code refactoring and transformation utilities
 
 use crate::{
-    ast::{PythonAst, AstNodeRef, ImportNode, CallNode, TryExceptNode, AssignmentNode},
+    ast::{AssignmentNode, AstNodeRef, CallNode, ImportNode, PythonAst, TryExceptNode},
     code_generator::CodeGenerator,
     error::Result,
     formatter::Formatter,
-    PyRustorError
+    PyRustorError,
 };
 use ruff_python_ast::{Identifier, Stmt};
 use ruff_text_size::TextRange;
@@ -102,13 +102,24 @@ impl Refactor {
     }
 
     /// Rename a function throughout the code with optional error on not found
-    pub fn rename_function_optional(&mut self, old_name: &str, new_name: &str, error_if_not_found: bool) -> Result<()> {
+    pub fn rename_function_optional(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        error_if_not_found: bool,
+    ) -> Result<()> {
         let mut found = false;
 
         // Find and rename function definitions recursively
         {
             let body = &mut self.ast.module_mut().body;
-            Self::rename_function_recursive_static(body, old_name, new_name, &mut found, &mut self.changes)?;
+            Self::rename_function_recursive_static(
+                body,
+                old_name,
+                new_name,
+                &mut found,
+                &mut self.changes,
+            )?;
         }
 
         if !found && error_if_not_found {
@@ -149,7 +160,13 @@ impl Refactor {
                 }
                 Stmt::ClassDef(class) => {
                     // Recursively search in class body for methods
-                    Self::rename_function_recursive_static(&mut class.body, old_name, new_name, found, changes)?;
+                    Self::rename_function_recursive_static(
+                        &mut class.body,
+                        old_name,
+                        new_name,
+                        found,
+                        changes,
+                    )?;
                 }
                 _ => {}
             }
@@ -177,13 +194,24 @@ impl Refactor {
     }
 
     /// Rename a class throughout the code with optional error on not found
-    pub fn rename_class_optional(&mut self, old_name: &str, new_name: &str, error_if_not_found: bool) -> Result<()> {
+    pub fn rename_class_optional(
+        &mut self,
+        old_name: &str,
+        new_name: &str,
+        error_if_not_found: bool,
+    ) -> Result<()> {
         let mut found = false;
 
         // Find and rename class definitions recursively
         {
             let body = &mut self.ast.module_mut().body;
-            Self::rename_class_recursive_static(body, old_name, new_name, &mut found, &mut self.changes)?;
+            Self::rename_class_recursive_static(
+                body,
+                old_name,
+                new_name,
+                &mut found,
+                &mut self.changes,
+            )?;
         }
 
         if !found && error_if_not_found {
@@ -220,11 +248,23 @@ impl Refactor {
                         });
                     }
                     // Also search for nested classes within this class
-                    Self::rename_class_recursive_static(&mut class.body, old_name, new_name, found, changes)?;
+                    Self::rename_class_recursive_static(
+                        &mut class.body,
+                        old_name,
+                        new_name,
+                        found,
+                        changes,
+                    )?;
                 }
                 Stmt::FunctionDef(func) => {
                     // Search for nested classes within functions
-                    Self::rename_class_recursive_static(&mut func.body, old_name, new_name, found, changes)?;
+                    Self::rename_class_recursive_static(
+                        &mut func.body,
+                        old_name,
+                        new_name,
+                        found,
+                        changes,
+                    )?;
                 }
                 _ => {}
             }
@@ -518,7 +558,7 @@ impl Refactor {
 
     /// Find function calls
     pub fn find_function_calls(&self, function_name: &str) -> Vec<CallNode> {
-        self.ast.find_function_calls(function_name)
+        self.ast.find_function_calls(Some(function_name))
     }
 
     /// Find try-except blocks
@@ -623,7 +663,12 @@ impl Refactor {
     }
 
     /// Replace code in a specific line range (bottom-level API)
-    pub fn replace_code_range(&mut self, start_line: usize, end_line: usize, _new_code: &str) -> Result<()> {
+    pub fn replace_code_range(
+        &mut self,
+        start_line: usize,
+        end_line: usize,
+        _new_code: &str,
+    ) -> Result<()> {
         // This is a placeholder implementation
         // In a full implementation, this would:
         // 1. Identify the AST nodes in the line range
@@ -696,10 +741,9 @@ impl Refactor {
 
         for (old_module, new_module) in modernization_map {
             // Check if the old module is imported
-            let imports = self.ast.imports();
+            let imports = self.ast.find_imports(None);
             let has_old_import = imports.iter().any(|imp| {
                 imp.module == old_module
-                    || imp.from_module.as_ref().is_some_and(|m| m == old_module)
             });
 
             if has_old_import {
@@ -997,7 +1041,7 @@ def old_function():
         refactor.modernize_syntax()?;
 
         // Check that changes were recorded
-        assert!(refactor.changes().len() > 0);
+        assert!(!refactor.changes().is_empty());
 
         // Check that code generation works
         let result = refactor.to_string()?;
@@ -1123,7 +1167,10 @@ def old_function():
 
         // Rename every 10th function and class
         for i in (0..100).step_by(10) {
-            refactor.rename_function(&format!("function_{}", i), &format!("renamed_function_{}", i))?;
+            refactor.rename_function(
+                &format!("function_{}", i),
+                &format!("renamed_function_{}", i),
+            )?;
             refactor.rename_class(&format!("Class_{}", i), &format!("RenamedClass_{}", i))?;
         }
 

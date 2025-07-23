@@ -40,7 +40,9 @@ pub mod parser;
 pub mod refactor;
 
 // Re-export main types for convenience
-pub use ast::{AstNode, PythonAst, AstNodeRef, ImportNode, CallNode, TryExceptNode, AssignmentNode};
+pub use ast::{
+    AssignmentNode, AstNodeRef, CallNode, ImportNode, ImportInfo, PythonAst, SourceLocation, TryExceptNode,
+};
 pub use code_generator::CodeGenerator;
 pub use error::{PyRustorError, Result};
 pub use formatter::Formatter;

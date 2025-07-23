@@ -81,7 +81,7 @@ impl Formatter {
         }
 
         // Generate code from the current AST state (which may have been modified)
-        let generated_code = ast.to_string()?;
+        let generated_code = ast.to_code()?;
 
         if self.config.preserve_original {
             // Return the generated code (which reflects any modifications)

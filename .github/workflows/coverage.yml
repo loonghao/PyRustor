@@ -45,7 +45,7 @@ jobs:
         run: just coverage-rust
       
       - name: Run Python tests with coverage
-        run: just coverage-python
+        run: just coverage-python-ci
         env:
           PYTHONUNBUFFERED: 1
       

@@ -159,7 +159,9 @@ def temp_directory():
 @pytest.fixture(scope="session")
 def test_data_dir():
     """Get the test data directory."""
-    return Path(__file__).parent / "data"
+    data_dir = Path(__file__).parent / "data"
+    data_dir.mkdir(exist_ok=True)
+    return data_dir
 
 
 # Pytest markers for organizing tests

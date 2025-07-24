@@ -92,5 +92,3 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 70
-          COVERAGE_PATH: coverage.xml
-          VERBOSE: true

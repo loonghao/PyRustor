@@ -3,7 +3,6 @@
 use crate::{error::Result, PyRustorError};
 use ruff_python_ast::{Expr, ModModule, Stmt};
 
-
 /// Represents a Python Abstract Syntax Tree with formatting information
 #[derive(Debug, Clone)]
 pub struct PythonAst {
@@ -60,7 +59,7 @@ impl PythonAst {
         if self.module.body.is_empty() {
             return true;
         }
-        
+
         // Check if all statements are just string literals (docstrings)
         for stmt in &self.module.body {
             match stmt {
@@ -82,7 +81,7 @@ impl PythonAst {
                 }
             }
         }
-        
+
         // All statements are string literals (docstrings), so consider it comments-only
         true
     }

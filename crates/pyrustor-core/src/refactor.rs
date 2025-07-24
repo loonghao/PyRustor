@@ -742,9 +742,7 @@ impl Refactor {
         for (old_module, new_module) in modernization_map {
             // Check if the old module is imported
             let imports = self.ast.find_imports(None);
-            let has_old_import = imports.iter().any(|imp| {
-                imp.module == old_module
-            });
+            let has_old_import = imports.iter().any(|imp| imp.module == old_module);
 
             if has_old_import {
                 self.replace_import(old_module, new_module)?;

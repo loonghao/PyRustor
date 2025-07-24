@@ -41,7 +41,8 @@ pub mod refactor;
 
 // Re-export main types for convenience
 pub use ast::{
-    AssignmentNode, AstNodeRef, CallNode, ImportNode, ImportInfo, PythonAst, SourceLocation, TryExceptNode,
+    AssignmentNode, AstNodeRef, CallNode, ImportInfo, ImportNode, PythonAst, SourceLocation,
+    TryExceptNode,
 };
 pub use code_generator::CodeGenerator;
 pub use error::{PyRustorError, Result};

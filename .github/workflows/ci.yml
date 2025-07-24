@@ -152,9 +152,9 @@ jobs:
           fi
 
           # Test basic functionality
-          python -c "import pyrustor; print('✅ PyRustor imported successfully')"
-          python -c "import pyrustor; parser = pyrustor.Parser(); print('✅ Parser created successfully')"
-          python -c "import pyrustor; print('✅ Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
+          python -c "import pyrustor; print('[OK] PyRustor imported successfully')"
+          python -c "import pyrustor; parser = pyrustor.Parser(); print('[OK] Parser created successfully')"
+          python -c "import pyrustor; print('[OK] Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
         shell: bash
         env:
           PYTHONUNBUFFERED: 1

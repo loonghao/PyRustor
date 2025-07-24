@@ -1,31 +1,36 @@
 //! AST code generation functionality
 
+use super::core::PythonAst;
 use crate::{error::Result, PyRustorError};
 use ruff_python_ast::Stmt;
-use super::core::PythonAst;
 
 impl PythonAst {
     /// Generate code for the entire AST
     pub fn to_code(&self) -> Result<String> {
         let mut result = String::new();
-        
+
         for stmt in &self.module.body {
             let stmt_code = self.generate_statement(stmt, 0)?;
             result.push_str(&stmt_code);
             result.push('\n');
         }
-        
+
         Ok(result)
     }
 
     /// Generate code for a single statement
     pub fn generate_statement(&self, stmt: &Stmt, indent_level: usize) -> Result<String> {
+        Self::generate_statement_impl(stmt, indent_level)
+    }
+
+    /// Internal implementation for statement generation
+    fn generate_statement_impl(stmt: &Stmt, indent_level: usize) -> Result<String> {
         let indent_str = "    ".repeat(indent_level);
-        
+
         match stmt {
             Stmt::FunctionDef(func) => {
                 let mut result = format!("{}def {}(", indent_str, func.name);
-                
+
                 // Add parameters
                 for (i, arg) in func.parameters.args.iter().enumerate() {
                     if i > 0 {
@@ -33,26 +38,26 @@ impl PythonAst {
                     }
                     result.push_str(&arg.parameter.name);
                 }
-                
+
                 result.push_str("):\n");
-                
+
                 // Add function body
                 if func.body.is_empty() {
                     result.push_str(&format!("{}    pass\n", indent_str));
                 } else {
                     for body_stmt in &func.body {
-                        let body_code = self.generate_statement(body_stmt, indent_level + 1)?;
+                        let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
                         result.push_str(&body_code);
                         result.push('\n');
                     }
                 }
-                
+
                 Ok(result)
             }
-            
+
             Stmt::ClassDef(class) => {
                 let mut result = format!("{}class {}", indent_str, class.name);
-                
+
                 // Add base classes if any
                 if !class.bases().is_empty() {
                     result.push('(');
@@ -64,23 +69,23 @@ impl PythonAst {
                     }
                     result.push(')');
                 }
-                
+
                 result.push_str(":\n");
-                
+
                 // Add class body
                 if class.body.is_empty() {
                     result.push_str(&format!("{}    pass\n", indent_str));
                 } else {
                     for body_stmt in &class.body {
-                        let body_code = self.generate_statement(body_stmt, indent_level + 1)?;
+                        let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
                         result.push_str(&body_code);
                         result.push('\n');
                     }
                 }
-                
+
                 Ok(result)
             }
-            
+
             Stmt::Return(ret) => {
                 let mut result = format!("{}return", indent_str);
                 if let Some(value) = &ret.value {
@@ -89,14 +94,14 @@ impl PythonAst {
                 }
                 Ok(result)
             }
-            
+
             Stmt::Pass(_) => Ok(format!("{}pass", indent_str)),
-            
+
             Stmt::Expr(expr) => {
                 let expr_code = Self::generate_expression(&expr.value)?;
                 Ok(format!("{}{}", indent_str, expr_code))
             }
-            
+
             Stmt::Import(import) => {
                 let mut result = format!("{}import ", indent_str);
                 for (i, alias) in import.names.iter().enumerate() {
@@ -111,7 +116,7 @@ impl PythonAst {
                 }
                 Ok(result)
             }
-            
+
             Stmt::ImportFrom(import_from) => {
                 let mut result = format!("{}from ", indent_str);
                 if let Some(module) = &import_from.module {
@@ -120,7 +125,7 @@ impl PythonAst {
                     result.push('.');
                 }
                 result.push_str(" import ");
-                
+
                 for (i, alias) in import_from.names.iter().enumerate() {
                     if i > 0 {
                         result.push_str(", ");
@@ -133,10 +138,10 @@ impl PythonAst {
                 }
                 Ok(result)
             }
-            
+
             Stmt::Assign(assign) => {
                 let mut result = indent_str.to_string();
-                
+
                 // Handle targets (left side of assignment)
                 for (i, target) in assign.targets.iter().enumerate() {
                     if i > 0 {
@@ -144,19 +149,17 @@ impl PythonAst {
                     }
                     result.push_str(&Self::generate_expression(target)?);
                 }
-                
+
                 result.push_str(" = ");
                 result.push_str(&Self::generate_expression(&assign.value)?);
                 Ok(result)
             }
-            
+
             // Add more statement types as needed
-            _ => {
-                Err(PyRustorError::ast_error(&format!(
-                    "Unsupported statement type: {:?}",
-                    std::mem::discriminant(stmt)
-                )))
-            }
+            _ => Err(PyRustorError::ast_error(format!(
+                "Unsupported statement type: {:?}",
+                std::mem::discriminant(stmt)
+            ))),
         }
     }
 
@@ -166,18 +169,18 @@ impl PythonAst {
 
         match expr {
             Expr::Name(name) => Ok(name.id.to_string()),
-            
+
             Expr::StringLiteral(s) => {
                 // Simple string literal generation
                 Ok(format!("\"{}\"", s.value))
             }
-            
+
             Expr::NumberLiteral(n) => Ok(format!("{:?}", n.value)),
-            
+
             Expr::BooleanLiteral(b) => Ok(if b.value { "True" } else { "False" }.to_string()),
-            
+
             Expr::NoneLiteral(_) => Ok("None".to_string()),
-            
+
             Expr::Call(call) => {
                 let mut result = Self::generate_expression(&call.func)?;
                 result.push('(');
@@ -192,7 +195,7 @@ impl PythonAst {
                 result.push(')');
                 Ok(result)
             }
-            
+
             Expr::BinOp(binop) => {
                 // Binary operations like +, -, *, etc.
                 let left = Self::generate_expression(&binop.left)?;
@@ -214,7 +217,7 @@ impl PythonAst {
                 };
                 Ok(format!("{} {} {}", left, op, right))
             }
-            
+
             Expr::Attribute(attr) => {
                 // Attribute access like obj.attr
                 let value = Self::generate_expression(&attr.value)?;
@@ -226,14 +229,12 @@ impl PythonAst {
                 let slice = Self::generate_expression(&subscript.slice)?;
                 Ok(format!("{}[{}]", value, slice))
             }
-            
+
             // Add more expression types as needed
-            _ => {
-                Err(PyRustorError::ast_error(&format!(
-                    "Unsupported expression type: {:?}",
-                    std::mem::discriminant(expr)
-                )))
-            }
+            _ => Err(PyRustorError::ast_error(format!(
+                "Unsupported expression type: {:?}",
+                std::mem::discriminant(expr)
+            ))),
         }
     }
 }

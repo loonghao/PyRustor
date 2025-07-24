@@ -1,7 +1,7 @@
 //! AST query functionality
 
-use ruff_python_ast::{Expr, Stmt};
 use super::{core::PythonAst, nodes::*};
+use ruff_python_ast::{Expr, Stmt};
 
 impl PythonAst {
     /// Find nodes matching specific criteria (bottom-level API)
@@ -14,7 +14,7 @@ impl PythonAst {
     /// Find import statements
     pub fn find_imports(&self, module_pattern: Option<&str>) -> Vec<ImportNode> {
         let mut imports = Vec::new();
-        
+
         for (i, stmt) in self.module.body.iter().enumerate() {
             match stmt {
                 Stmt::Import(import) => {
@@ -25,7 +25,7 @@ impl PythonAst {
                                 continue;
                             }
                         }
-                        
+
                         imports.push(ImportNode {
                             module: module_name,
                             items: vec![],
@@ -45,12 +45,13 @@ impl PythonAst {
                                 continue;
                             }
                         }
-                        
-                        let items: Vec<String> = import_from.names
+
+                        let items: Vec<String> = import_from
+                            .names
                             .iter()
                             .map(|alias| alias.name.to_string())
                             .collect();
-                        
+
                         imports.push(ImportNode {
                             module: module_name,
                             items,
@@ -65,28 +66,43 @@ impl PythonAst {
                 _ => {}
             }
         }
-        
+
         imports
     }
 
     /// Find function calls
     pub fn find_function_calls(&self, function_name: Option<&str>) -> Vec<CallNode> {
         let mut calls = Vec::new();
-        Self::find_calls_recursive(&self.module.body, &mut Vec::new(), &mut calls, function_name);
+        Self::find_calls_recursive(
+            &self.module.body,
+            &mut Vec::new(),
+            &mut calls,
+            function_name,
+        );
         calls
     }
 
     /// Find try-except blocks
     pub fn find_try_except_blocks(&self, exception_type: Option<&str>) -> Vec<TryExceptNode> {
         let mut blocks = Vec::new();
-        Self::find_try_except_recursive(&self.module.body, &mut Vec::new(), &mut blocks, exception_type);
+        Self::find_try_except_recursive(
+            &self.module.body,
+            &mut Vec::new(),
+            &mut blocks,
+            exception_type,
+        );
         blocks
     }
 
     /// Find assignment statements
     pub fn find_assignments(&self, target_pattern: Option<&str>) -> Vec<AssignmentNode> {
         let mut assignments = Vec::new();
-        Self::find_assignments_recursive(&self.module.body, &mut Vec::new(), &mut assignments, target_pattern);
+        Self::find_assignments_recursive(
+            &self.module.body,
+            &mut Vec::new(),
+            &mut assignments,
+            target_pattern,
+        );
         assignments
     }
 
@@ -100,7 +116,7 @@ impl PythonAst {
     ) {
         for (i, stmt) in stmts.iter().enumerate() {
             path.push(i);
-            
+
             // Check if this node matches the criteria
             let stmt_type = match stmt {
                 Stmt::FunctionDef(_) => "FunctionDef",
@@ -111,7 +127,7 @@ impl PythonAst {
                 Stmt::Try(_) => "Try",
                 _ => "Other",
             };
-            
+
             if node_type.is_none() || node_type == Some(stmt_type) {
                 nodes.push(AstNodeRef {
                     path: path.clone(),
@@ -119,7 +135,7 @@ impl PythonAst {
                     location: None,
                 });
             }
-            
+
             // Recursively search nested statements
             match stmt {
                 Stmt::FunctionDef(func) => {
@@ -142,7 +158,7 @@ impl PythonAst {
                 }
                 _ => {}
             }
-            
+
             path.pop();
         }
     }
@@ -155,7 +171,7 @@ impl PythonAst {
     ) {
         for (i, stmt) in stmts.iter().enumerate() {
             path.push(i);
-            
+
             // Search for function calls in expressions
             match stmt {
                 Stmt::Expr(expr) => {
@@ -177,7 +193,7 @@ impl PythonAst {
                 }
                 _ => {}
             }
-            
+
             path.pop();
         }
     }
@@ -199,14 +215,16 @@ impl PythonAst {
                     }
                     _ => "unknown".to_string(),
                 };
-                
+
                 // Check if this matches the search criteria
                 if function_name.is_none() || function_name == Some(&func_name) {
-                    let args: Vec<String> = call.arguments.args
+                    let args: Vec<String> = call
+                        .arguments
+                        .args
                         .iter()
-                        .map(|arg| Self::expr_to_string(arg))
+                        .map(Self::expr_to_string)
                         .collect();
-                    
+
                     calls.push(CallNode {
                         function_name: func_name,
                         args,
@@ -217,7 +235,7 @@ impl PythonAst {
                         },
                     });
                 }
-                
+
                 // Recursively search in arguments
                 for arg in &call.arguments.args {
                     Self::find_calls_in_expr(arg, path, calls, function_name);
@@ -260,20 +278,22 @@ impl PythonAst {
     ) {
         for (i, stmt) in stmts.iter().enumerate() {
             path.push(i);
-            
+
             match stmt {
                 Stmt::Try(try_stmt) => {
                     let mut exception_types = Vec::new();
-                    
+
                     for handler in &try_stmt.handlers {
                         match handler {
                             ruff_python_ast::ExceptHandler::ExceptHandler(eh) => {
                                 if let Some(exc_type) = &eh.type_ {
                                     let type_name = Self::expr_to_string(exc_type);
                                     exception_types.push(type_name.clone());
-                                    
+
                                     // Check if this matches the search criteria
-                                    if exception_type.is_none() || exception_type == Some(&type_name) {
+                                    if exception_type.is_none()
+                                        || exception_type == Some(&type_name)
+                                    {
                                         blocks.push(TryExceptNode {
                                             exception_types: vec![type_name],
                                             node_ref: AstNodeRef {
@@ -284,11 +304,16 @@ impl PythonAst {
                                         });
                                     }
                                 }
-                                Self::find_try_except_recursive(&eh.body, path, blocks, exception_type);
+                                Self::find_try_except_recursive(
+                                    &eh.body,
+                                    path,
+                                    blocks,
+                                    exception_type,
+                                );
                             }
                         }
                     }
-                    
+
                     Self::find_try_except_recursive(&try_stmt.body, path, blocks, exception_type);
                 }
                 Stmt::FunctionDef(func) => {
@@ -299,7 +324,7 @@ impl PythonAst {
                 }
                 _ => {}
             }
-            
+
             path.pop();
         }
     }
@@ -312,14 +337,15 @@ impl PythonAst {
     ) {
         for (i, stmt) in stmts.iter().enumerate() {
             path.push(i);
-            
+
             match stmt {
                 Stmt::Assign(assign) => {
                     for target in &assign.targets {
                         let target_name = Self::expr_to_string(target);
-                        
+
                         // Check if this matches the search criteria
-                        if target_pattern.is_none() || target_name.contains(target_pattern.unwrap()) {
+                        if target_pattern.is_none() || target_name.contains(target_pattern.unwrap())
+                        {
                             assignments.push(AssignmentNode {
                                 target: target_name,
                                 value: Self::expr_to_string(&assign.value),
@@ -336,21 +362,36 @@ impl PythonAst {
                     Self::find_assignments_recursive(&func.body, path, assignments, target_pattern);
                 }
                 Stmt::ClassDef(class) => {
-                    Self::find_assignments_recursive(&class.body, path, assignments, target_pattern);
+                    Self::find_assignments_recursive(
+                        &class.body,
+                        path,
+                        assignments,
+                        target_pattern,
+                    );
                 }
                 Stmt::Try(try_stmt) => {
-                    Self::find_assignments_recursive(&try_stmt.body, path, assignments, target_pattern);
+                    Self::find_assignments_recursive(
+                        &try_stmt.body,
+                        path,
+                        assignments,
+                        target_pattern,
+                    );
                     for handler in &try_stmt.handlers {
                         match handler {
                             ruff_python_ast::ExceptHandler::ExceptHandler(eh) => {
-                                Self::find_assignments_recursive(&eh.body, path, assignments, target_pattern);
+                                Self::find_assignments_recursive(
+                                    &eh.body,
+                                    path,
+                                    assignments,
+                                    target_pattern,
+                                );
                             }
                         }
                     }
                 }
                 _ => {}
             }
-            
+
             path.pop();
         }
     }
@@ -366,9 +407,11 @@ impl PythonAst {
             }
             Expr::Call(call) => {
                 let func_name = Self::expr_to_string(&call.func);
-                let args: Vec<String> = call.arguments.args
+                let args: Vec<String> = call
+                    .arguments
+                    .args
                     .iter()
-                    .map(|arg| Self::expr_to_string(arg))
+                    .map(Self::expr_to_string)
                     .collect();
                 format!("{}({})", func_name, args.join(", "))
             }

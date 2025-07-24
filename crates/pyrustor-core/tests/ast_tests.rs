@@ -13,7 +13,7 @@ class MyClass:
     def method(self):
         return 42
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     assert!(!ast.is_empty());
     assert_eq!(ast.statement_count(), 2);
@@ -33,10 +33,10 @@ class MyClass:
     def method2(self):
         pass
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     let function_names = ast.function_names();
-    
+
     assert_eq!(function_names.len(), 3);
     assert!(function_names.contains(&"top_level_function".to_string()));
     assert!(function_names.contains(&"method1".to_string()));
@@ -53,10 +53,10 @@ class FirstClass:
 class SecondClass:
     pass
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     let class_names = ast.class_names();
-    
+
     assert_eq!(class_names.len(), 2);
     assert!(class_names.contains(&"FirstClass".to_string()));
     assert!(class_names.contains(&"SecondClass".to_string()));
@@ -78,7 +78,7 @@ fn test_comments_only() {
 This is just a docstring
 """
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     assert!(!ast.is_empty()); // Has a statement (docstring)
     assert!(ast.is_comments_only()); // But it's only comments/docstrings
@@ -93,12 +93,12 @@ import sys
 from collections import defaultdict
 from typing import List, Dict
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     let imports = ast.find_imports(None);
-    
+
     assert_eq!(imports.len(), 4);
-    
+
     // Test specific module search
     let os_imports = ast.find_imports(Some("os"));
     assert_eq!(os_imports.len(), 1);
@@ -114,12 +114,12 @@ def test():
     len([1, 2, 3])
     print("world")
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     let calls = ast.find_function_calls(None);
-    
+
     assert!(calls.len() >= 3); // At least print, len, print
-    
+
     // Test specific function search
     let print_calls = ast.find_function_calls(Some("print"));
     assert_eq!(print_calls.len(), 2);
@@ -133,12 +133,12 @@ x = 1
 y = 2
 result = x + y
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     let assignments = ast.find_assignments(None);
-    
+
     assert_eq!(assignments.len(), 3);
-    
+
     // Test specific target search
     let x_assignments = ast.find_assignments(Some("x"));
     assert_eq!(x_assignments.len(), 1);
@@ -151,10 +151,10 @@ fn test_code_generation() {
     let code = r#"def hello():
     return "world"
 "#;
-    
+
     let ast = parser.parse_string(code).unwrap();
     let generated = ast.to_code().unwrap();
-    
+
     // Should contain the function definition
     assert!(generated.contains("def hello():"));
     assert!(generated.contains("return \"world\""));

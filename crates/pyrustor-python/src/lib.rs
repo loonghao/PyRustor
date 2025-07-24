@@ -117,7 +117,11 @@ impl PythonAst {
 
     /// Get import information
     fn imports(&self) -> Vec<String> {
-        self.inner.find_imports(None).iter().map(|i| i.module.clone()).collect()
+        self.inner
+            .find_imports(None)
+            .iter()
+            .map(|i| i.module.clone())
+            .collect()
     }
 
     /// Convert AST back to string

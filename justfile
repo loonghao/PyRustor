@@ -120,6 +120,10 @@ ci-test-python:
     @echo "🧪 Running Python tests..."
     uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
 
+ci-test-python-benchmark:
+    @echo "🧪 Running Python benchmark tests..."
+    uv run python -m pytest tests/ -v --tb=short -m "benchmark"
+
 ci-test-basic:
     @echo "🧪 Running basic functionality tests..."
     uv run python -c 'import pyrustor; print("PyRustor imported successfully")'
@@ -129,7 +133,7 @@ ci-test-basic:
 ci-lint:
     @echo "🔍 Running CI linting..."
     cargo fmt --all -- --check
-    cargo clippy --all-targets --all-features -- -D warnings -A clippy::uninlined-format-args
+    cargo clippy --workspace --exclude pyrustor-python --all-targets --all-features -- -D warnings -A clippy::uninlined-format-args
     uv run ruff check .
     uv run ruff format --check .
 

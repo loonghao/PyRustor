@@ -220,7 +220,7 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Run benchmark tests
-        run: just ci-test-python -m "benchmark"
+        run: just ci-test-python-benchmark
         env:
           PYTHONUNBUFFERED: 1
 

@@ -174,7 +174,7 @@ coverage-python-ci:
     @echo "📊 Running Python tests with coverage for CI..."
     @echo "⚠️  Note: Some tests may fail due to incomplete code generation after refactoring"
     @echo "📊 Generating coverage report even with test failures..."
-    -uv run pytest --cov=pyrustor --cov-report=html --cov-report=term-missing --cov-report=xml --tb=no --maxfail=50 -q
+    -uv run pytest --cov=pyrustor --cov-report=html --cov-report=term-missing --cov-report=xml --cov-report= --tb=no --maxfail=50 -q
     @echo "✅ Coverage report generated successfully"
     @echo "📊 Coverage files:"
     @echo "  - HTML: htmlcov/index.html"

@@ -81,20 +81,27 @@ runs:
       run: |
         # Create a clean virtual environment for testing
         python -m venv test-wheel-env
-        
+
         # Activate environment and install wheel
         if [ "${{ runner.os }}" = "Windows" ]; then
           source test-wheel-env/Scripts/activate
         else
           source test-wheel-env/bin/activate
         fi
-        
-        pip install pyrustor --find-links dist --force-reinstall
-        
+
+        # List available wheels for debugging
+        echo "Available wheels:"
+        ls -la dist/
+
+        # Install wheel directly by filename (more reliable than package name)
+        wheel_file=$(ls dist/*.whl | head -1)
+        echo "Installing wheel: $wheel_file"
+        pip install "$wheel_file" --force-reinstall
+
         # Test basic functionality
         python -c "import pyrustor; print('[OK] PyRustor imported successfully')"
         python -c "import pyrustor; parser = pyrustor.Parser(); print('[OK] Parser created successfully')"
-        
+
         # Run integrity test if available
         if [ -f "scripts/test_wheel_integrity.py" ]; then
           pip install pytest

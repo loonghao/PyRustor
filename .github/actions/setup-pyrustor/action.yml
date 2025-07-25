@@ -1,0 +1,67 @@
+name: 'Setup PyRustor Development Environment'
+description: 'Sets up Python, Rust, uv, and just for PyRustor development'
+
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: true
+    default: '3.11'
+  rust-components:
+    description: 'Additional Rust components to install'
+    required: false
+    default: ''
+  cache-key-suffix:
+    description: 'Additional suffix for cache keys'
+    required: false
+    default: ''
+  install-dependencies:
+    description: 'Whether to install project dependencies'
+    required: false
+    default: 'true'
+
+outputs:
+  python-version:
+    description: 'The Python version that was installed'
+    value: ${{ steps.setup-python.outputs.python-version }}
+  rust-version:
+    description: 'The Rust version that was installed'
+    value: ${{ steps.setup-rust.outputs.rustc-version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      id: setup-python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+        enable-cache: true
+        cache-dependency-glob: |
+          **/pyproject.toml
+          **/uv.lock
+
+    - name: Setup Rust
+      id: setup-rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: ${{ inputs.rust-components }}
+
+    - name: Setup Advanced Caching
+      uses: ./.github/actions/cache-setup
+      with:
+        cache-type: 'build'
+        cache-key-suffix: ${{ inputs.cache-key-suffix }}
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install just
+      uses: extractions/setup-just@v2
+
+    - name: Install dependencies
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      run: just ci-install

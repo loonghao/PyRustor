@@ -1,0 +1,163 @@
+name: Test CI Optimization
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [optimize/ci-performance]
+
+permissions:
+  contents: read
+
+jobs:
+  # Test our new composite actions
+  test-setup-action:
+    name: Test Setup Action
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: '3.11'
+          rust-components: 'clippy'
+          cache-key-suffix: 'test-setup'
+
+      - name: Verify setup
+        run: |
+          echo "Testing setup verification..."
+          python --version
+          rustc --version
+          uv --version
+          just --version
+          echo "Setup verification completed successfully!"
+
+  # Test build and test action
+  test-build-action:
+    name: Test Build Action
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: '3.11'
+          cache-key-suffix: 'test-build'
+
+      - name: Test Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+          generate-stubs: 'true'
+          upload-artifacts: 'true'
+          artifact-name: 'test-build-results'
+
+  # Test wheel building action
+  test-wheel-action:
+    name: Test Wheel Action
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test Build Wheel
+        uses: ./.github/actions/build-wheel
+        with:
+          python-version: '3.11'
+          test-wheel: 'true'
+          upload-wheel: 'true'
+          artifact-name: 'test-wheels'
+
+  # Test cache effectiveness
+  test-cache-effectiveness:
+    name: Test Cache Effectiveness
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: First run - populate cache
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: '3.11'
+          cache-key-suffix: 'cache-test'
+
+      - name: Build first time
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+
+      - name: Second run - should use cache
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: '3.11'
+          cache-key-suffix: 'cache-test'
+
+      - name: Build second time (should be faster)
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+
+  # Performance comparison
+  performance-comparison:
+    name: Performance Comparison
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Time optimized workflow
+        run: |
+          echo "Starting optimized workflow timing..."
+          start_time=$(date +%s)
+          echo "start_time=$start_time" >> $GITHUB_ENV
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: '3.11'
+          cache-key-suffix: 'performance'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+
+      - name: Calculate timing
+        run: |
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          echo "Optimized workflow completed in: ${duration} seconds"
+          echo "This should be significantly faster than the original workflow!"
+
+  # Validate all components work together
+  integration-test:
+    name: Integration Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.8', '3.13']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache-key-suffix: 'integration-${{ matrix.os }}'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+          upload-artifacts: 'true'
+          artifact-name: 'integration-test-${{ matrix.os }}-py${{ matrix.python-version }}'
+
+      - name: Verify integration
+        run: |
+          echo "Integration test completed successfully for ${{ matrix.os }} with Python ${{ matrix.python-version }}"

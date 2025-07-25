@@ -5,6 +5,12 @@ on:
     branches: [main]
     tags: ['*']
   pull_request:
+    paths:
+      - 'crates/**'
+      - 'python/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'pyproject.toml'
   workflow_dispatch:
   workflow_call:
 
@@ -19,60 +25,40 @@ jobs:
     strategy:
       matrix:
         target: [x86_64, i686]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          architecture: x64
-      
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
+
+      - name: Build and Test Wheel
+        uses: ./.github/actions/build-wheel
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: auto
-      
-      - name: Install built wheel
-        if: matrix.target == 'x86_64'
-        run: |
-          pip install pyrustor --find-links dist --force-reinstall
-          python -c "import pyrustor; print('PyRustor imported successfully')"
-      
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-linux-${{ matrix.target }}
-          path: dist
+          python-version: '3.13'
+          test-wheel: ${{ matrix.target == 'x86_64' }}
+          artifact-name: 'wheels-linux-${{ matrix.target }}'
 
-  # Linux cross-compilation
+  # Linux cross-compilation - only for releases or when requested
   linux-cross:
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || contains(github.event.pull_request.labels.*.name, 'build-cross')
     strategy:
       matrix:
         target: [aarch64, armv7]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
+
+      - name: Build Cross-Platform Wheel
+        uses: ./.github/actions/build-wheel
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-          manylinux: auto
-      
-      - uses: uraimo/run-on-arch-action@v3.0.1
+          python-version: '3.13'
+          test-wheel: 'false'  # Skip testing for cross-compiled wheels
+          artifact-name: 'wheels-linux-cross-${{ matrix.target }}'
+
+      - name: Test cross-compiled wheel
+        uses: uraimo/run-on-arch-action@v3.0.1
         if: matrix.target != 'ppc64le'
-        name: Install built wheel
         with:
           arch: ${{ matrix.target }}
           distro: ubuntu20.04
@@ -85,12 +71,6 @@ jobs:
             source $HOME/.local/bin/env
             uv pip install pyrustor --find-links dist/ --force-reinstall --system
             python3 -c "import pyrustor; print('PyRustor imported successfully')"
-      
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-linux-cross-${{ matrix.target }}
-          path: dist
 
   # Windows builds
   windows:
@@ -98,75 +78,33 @@ jobs:
     strategy:
       matrix:
         target: [x64, x86]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          architecture: ${{ matrix.target }}
-      
-      - uses: dtolnay/rust-toolchain@stable
-      
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
+
+      - name: Build and Test Wheel
+        uses: ./.github/actions/build-wheel
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-      
-      - name: Install built wheel
-        run: |
-          pip install pyrustor --find-links dist --force-reinstall
-          python -c "import pyrustor; print('PyRustor imported successfully')"
-      
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-windows-${{ matrix.target }}
-          path: dist
+          python-version: '3.13'
+          test-wheel: 'true'
+          artifact-name: 'wheels-windows-${{ matrix.target }}'
 
   # macOS builds
   macos:
     runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, universal2-apple-darwin]
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Build and Test Wheel
+        uses: ./.github/actions/build-wheel
         with:
+          target: ${{ matrix.target }}
           python-version: '3.13'
-          architecture: x64
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - name: Build wheels - x86_64
-        uses: PyO3/maturin-action@v1
-        with:
-          target: x86_64
-          args: --release --out dist --sdist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-
-      - name: Install built wheel - x86_64
-        run: |
-          pip install pyrustor --find-links dist --force-reinstall
-          python -c "import pyrustor; print('PyRustor imported successfully')"
-
-      - name: Build wheels - universal2
-        uses: PyO3/maturin-action@v1
-        with:
-          target: universal2-apple-darwin
-          args: --release --out dist --find-interpreter
-          sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
-
-      - name: Install built wheel - universal2
-        run: |
-          pip install pyrustor --find-links dist --force-reinstall
-          python -c "import pyrustor; print('PyRustor imported successfully')"
-
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-macos
-          path: dist
+          maturin-args: ${{ matrix.target == 'x86_64' && '--release --out dist --sdist --find-interpreter' || '--release --out dist --find-interpreter' }}
+          test-wheel: 'true'
+          artifact-name: 'wheels-macos-${{ matrix.target }}'

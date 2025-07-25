@@ -1,0 +1,113 @@
+name: 'Build PyRustor Wheel'
+description: 'Builds PyRustor wheel with maturin'
+
+inputs:
+  target:
+    description: 'Target platform for the wheel'
+    required: false
+    default: ''
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.11'
+  maturin-args:
+    description: 'Additional arguments for maturin'
+    required: false
+    default: '--release --out dist --find-interpreter'
+  test-wheel:
+    description: 'Whether to test the built wheel'
+    required: false
+    default: 'true'
+  upload-wheel:
+    description: 'Whether to upload the wheel as artifact'
+    required: false
+    default: 'true'
+  artifact-name:
+    description: 'Name for the wheel artifact'
+    required: false
+    default: 'wheels'
+
+outputs:
+  wheel-path:
+    description: 'Path to the built wheel'
+    value: ${{ steps.build.outputs.wheel-path }}
+  build-status:
+    description: 'Build status (success/failure)'
+    value: ${{ steps.build.outcome }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+        architecture: ${{ contains(inputs.target, 'x86') && 'x86' || 'x64' }}
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Rust build
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-${{ inputs.target }}-cargo-wheel-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ inputs.target }}-cargo-wheel-
+          ${{ runner.os }}-cargo-
+
+    - name: Build wheel
+      id: build
+      uses: PyO3/maturin-action@v1
+      with:
+        target: ${{ inputs.target }}
+        args: ${{ inputs.maturin-args }}
+        sccache: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        manylinux: ${{ runner.os == 'Linux' && 'auto' || '' }}
+
+    - name: Set wheel path output
+      shell: bash
+      run: |
+        wheel_file=$(ls dist/*.whl | head -1)
+        echo "wheel-path=$wheel_file" >> $GITHUB_OUTPUT
+
+    - name: Test wheel installation
+      if: inputs.test-wheel == 'true'
+      shell: bash
+      run: |
+        # Create a clean virtual environment for testing
+        python -m venv test-wheel-env
+        
+        # Activate environment and install wheel
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          source test-wheel-env/Scripts/activate
+        else
+          source test-wheel-env/bin/activate
+        fi
+        
+        pip install pyrustor --find-links dist --force-reinstall
+        
+        # Test basic functionality
+        python -c "import pyrustor; print('[OK] PyRustor imported successfully')"
+        python -c "import pyrustor; parser = pyrustor.Parser(); print('[OK] Parser created successfully')"
+        
+        # Run integrity test if available
+        if [ -f "scripts/test_wheel_integrity.py" ]; then
+          pip install pytest
+          python scripts/test_wheel_integrity.py
+        fi
+      env:
+        PYTHONUNBUFFERED: 1
+
+    - name: Upload wheel
+      if: inputs.upload-wheel == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}-${{ runner.os }}-${{ inputs.target || 'default' }}
+        path: dist/
+        retention-days: 30

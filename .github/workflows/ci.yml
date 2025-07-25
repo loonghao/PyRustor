@@ -32,7 +32,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install dependencies
         run: just ci-install
@@ -75,7 +75,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install dependencies
         run: just ci-install
@@ -116,7 +116,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install maturin
         run: |
@@ -217,7 +217,7 @@ jobs:
           RUST_BACKTRACE: 1
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Run benchmark tests
         run: just ci-test-python-benchmark
@@ -242,7 +242,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -298,7 +298,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6

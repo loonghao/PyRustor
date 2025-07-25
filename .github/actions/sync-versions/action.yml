@@ -1,0 +1,167 @@
+name: 'Sync Project Versions'
+description: 'Synchronizes version numbers across all project files'
+
+inputs:
+  target-version:
+    description: 'Target version to sync to (if not provided, uses Cargo.toml version)'
+    required: false
+    default: ''
+  dry-run:
+    description: 'Only check versions without making changes'
+    required: false
+    default: 'false'
+
+outputs:
+  version-synced:
+    description: 'Whether versions were synchronized'
+    value: ${{ steps.sync.outputs.synced }}
+  current-version:
+    description: 'The current synchronized version'
+    value: ${{ steps.sync.outputs.version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install required tools
+      shell: bash
+      run: |
+        # Install toml-cli for TOML manipulation
+        if ! command -v toml &> /dev/null; then
+          pip install toml-cli
+        fi
+
+    - name: Sync versions
+      id: sync
+      shell: bash
+      run: |
+        set -e
+        
+        # Function to extract version from Cargo.toml
+        get_cargo_version() {
+          grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
+        }
+        
+        # Function to extract version from pyproject.toml
+        get_python_version() {
+          grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
+        }
+        
+        # Function to extract version from package.json (if exists)
+        get_package_version() {
+          if [ -f "package.json" ]; then
+            grep '"version":' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/'
+          fi
+        }
+        
+        # Determine target version
+        if [ -n "${{ inputs.target-version }}" ]; then
+          TARGET_VERSION="${{ inputs.target-version }}"
+          echo "Using provided target version: $TARGET_VERSION"
+        else
+          TARGET_VERSION=$(get_cargo_version)
+          echo "Using Cargo.toml version as target: $TARGET_VERSION"
+        fi
+        
+        if [ -z "$TARGET_VERSION" ]; then
+          echo "Error: Could not determine target version"
+          exit 1
+        fi
+        
+        # Get current versions
+        CARGO_VERSION=$(get_cargo_version)
+        PYTHON_VERSION=$(get_python_version)
+        
+        echo "Current versions:"
+        echo "  Cargo.toml: $CARGO_VERSION"
+        echo "  pyproject.toml: $PYTHON_VERSION"
+        
+        # Check if package.json exists
+        if [ -f "package.json" ]; then
+          PACKAGE_VERSION=$(get_package_version)
+          echo "  package.json: $PACKAGE_VERSION"
+        fi
+        
+        # Check if versions are already in sync
+        NEEDS_SYNC=false
+        if [ "$CARGO_VERSION" != "$TARGET_VERSION" ]; then
+          echo "❌ Cargo.toml version ($CARGO_VERSION) != target ($TARGET_VERSION)"
+          NEEDS_SYNC=true
+        fi
+        
+        if [ "$PYTHON_VERSION" != "$TARGET_VERSION" ]; then
+          echo "❌ pyproject.toml version ($PYTHON_VERSION) != target ($TARGET_VERSION)"
+          NEEDS_SYNC=true
+        fi
+        
+        if [ -f "package.json" ] && [ "$PACKAGE_VERSION" != "$TARGET_VERSION" ]; then
+          echo "❌ package.json version ($PACKAGE_VERSION) != target ($TARGET_VERSION)"
+          NEEDS_SYNC=true
+        fi
+        
+        if [ "$NEEDS_SYNC" = false ]; then
+          echo "✅ All versions are already in sync at $TARGET_VERSION"
+          echo "synced=false" >> $GITHUB_OUTPUT
+          echo "version=$TARGET_VERSION" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        if [ "${{ inputs.dry-run }}" = "true" ]; then
+          echo "🔍 Dry run mode - would sync all versions to: $TARGET_VERSION"
+          echo "synced=false" >> $GITHUB_OUTPUT
+          echo "version=$TARGET_VERSION" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Perform version synchronization
+        echo "🔄 Synchronizing all versions to: $TARGET_VERSION"
+        
+        # Update Cargo.toml
+        if [ "$CARGO_VERSION" != "$TARGET_VERSION" ]; then
+          sed -i.bak "s/^version = \".*\"/version = \"$TARGET_VERSION\"/" Cargo.toml
+          echo "✅ Updated Cargo.toml: $CARGO_VERSION -> $TARGET_VERSION"
+        fi
+        
+        # Update pyproject.toml
+        if [ "$PYTHON_VERSION" != "$TARGET_VERSION" ]; then
+          sed -i.bak "s/^version = \".*\"/version = \"$TARGET_VERSION\"/" pyproject.toml
+          echo "✅ Updated pyproject.toml: $PYTHON_VERSION -> $TARGET_VERSION"
+        fi
+        
+        # Update package.json if it exists
+        if [ -f "package.json" ] && [ "$PACKAGE_VERSION" != "$TARGET_VERSION" ]; then
+          sed -i.bak "s/\"version\": \".*\"/\"version\": \"$TARGET_VERSION\"/" package.json
+          echo "✅ Updated package.json: $PACKAGE_VERSION -> $TARGET_VERSION"
+        fi
+        
+        # Clean up backup files
+        rm -f *.bak
+        
+        echo "🎉 Version synchronization completed!"
+        echo "synced=true" >> $GITHUB_OUTPUT
+        echo "version=$TARGET_VERSION" >> $GITHUB_OUTPUT
+
+    - name: Verify synchronization
+      if: inputs.dry-run != 'true'
+      shell: bash
+      run: |
+        echo "🔍 Verifying version synchronization..."
+        
+        CARGO_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+        PYTHON_VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+        
+        echo "Final versions:"
+        echo "  Cargo.toml: $CARGO_VERSION"
+        echo "  pyproject.toml: $PYTHON_VERSION"
+        
+        if [ -f "package.json" ]; then
+          PACKAGE_VERSION=$(grep '"version":' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+          echo "  package.json: $PACKAGE_VERSION"
+        fi
+        
+        # Verify all versions match
+        if [ "$CARGO_VERSION" = "$PYTHON_VERSION" ]; then
+          echo "✅ All versions are now synchronized!"
+        else
+          echo "❌ Version synchronization failed!"
+          exit 1
+        fi

@@ -18,6 +18,10 @@ inputs:
     description: 'Whether to install project dependencies'
     required: false
     default: 'true'
+  skip-version-check:
+    description: 'Whether to skip version consistency check'
+    required: false
+    default: 'false'
 
 outputs:
   python-version:

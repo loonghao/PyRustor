@@ -1,0 +1,196 @@
+name: PR Commands
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  handle-commands:
+    name: Handle PR Commands
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/sync-version')
+    
+    steps:
+      - name: Check if user has permission
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: collaborators } = await github.rest.repos.listCollaborators({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            
+            const userPermission = collaborators.find(
+              collaborator => collaborator.login === context.payload.comment.user.login
+            );
+            
+            if (!userPermission || !['admin', 'write'].includes(userPermission.permissions.admin ? 'admin' : userPermission.permissions.push ? 'write' : 'read')) {
+              core.setFailed('User does not have permission to run this command');
+            }
+
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            core.setOutput('head_ref', pr.head.ref);
+            core.setOutput('head_sha', pr.head.sha);
+            core.setOutput('base_ref', pr.base.ref);
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ steps.pr.outputs.head_ref }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: React to comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+      - name: Sync versions
+        id: sync
+        uses: ./.github/actions/sync-versions
+        with:
+          dry-run: 'false'
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.has-changes == 'true'
+        run: |
+          git add -A
+          git commit -m "chore: sync version to ${{ steps.sync.outputs.current-version }}
+          
+          Synchronized version numbers across project files.
+          Triggered by PR comment from @${{ github.event.comment.user.login }}"
+          
+          git push origin ${{ steps.pr.outputs.head_ref }}
+
+      - name: Comment on PR - Success
+        if: steps.changes.outputs.has-changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ✅ Version Sync Completed
+
+            I've synchronized all version numbers to \`${{ steps.sync.outputs.current-version }}\`.
+
+            ### Files Updated:
+            - ✅ Cargo.toml
+            - ✅ pyproject.toml  
+            - ✅ package.json (if exists)
+
+            The changes have been committed to this PR branch. The CI should now pass! 🎉`
+            });
+
+      - name: Comment on PR - No Changes
+        if: steps.changes.outputs.has-changes == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ℹ️ No Version Sync Needed
+
+            All version numbers are already consistent at \`${{ steps.sync.outputs.current-version }}\`.
+
+            If you're still seeing version check failures, please check:
+            1. The CI cache might need to be cleared
+            2. There might be other version references in the codebase
+            3. Try re-running the failed CI job`
+            });
+
+      - name: Comment on PR - Error
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## ❌ Version Sync Failed
+
+            I encountered an error while trying to sync the version numbers.
+
+            ### Possible solutions:
+            1. Check if there are merge conflicts in version files
+            2. Manually update the version numbers in:
+               - \`Cargo.toml\`
+               - \`pyproject.toml\`
+               - \`package.json\` (if exists)
+            3. Run the Version Synchronization workflow manually from the Actions tab
+
+            Please check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details.`
+            });
+
+  help-command:
+    name: Show Help
+    runs-on: ubuntu-latest
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/help')
+    
+    steps:
+      - name: Show available commands
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🤖 Available PR Commands
+
+            Here are the commands you can use in PR comments:
+
+            ### Version Management
+            - \`/sync-version\` - Synchronize version numbers across all project files
+            
+            ### CI Control  
+            - Add label \`full-ci\` - Run complete test matrix
+            - Add label \`test-wheels\` - Test wheel building
+            - Add label \`benchmark\` - Run performance benchmarks
+            - Add label \`security-check\` - Run security audits
+            - Add label \`build-cross\` - Build cross-platform wheels
+
+            ### Getting Help
+            - \`/help\` - Show this help message
+
+            ---
+            *Commands are only available to users with write access to the repository.*`
+            });`

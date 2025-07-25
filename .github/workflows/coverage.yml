@@ -60,7 +60,7 @@ jobs:
           cat pyproject.toml | grep -A 10 "\[tool.coverage"
       
       - name: Upload Rust coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: target/tarpaulin/cobertura.xml
           flags: rust
@@ -68,7 +68,7 @@ jobs:
           fail_ci_if_error: false
       
       - name: Upload Python coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           file: coverage.xml
           flags: python
@@ -76,7 +76,7 @@ jobs:
           fail_ci_if_error: false
       
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false

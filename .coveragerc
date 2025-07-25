@@ -1,7 +1,8 @@
 [run]
 source = python/pyrustor
 branch = True
-omit = 
+relative_files = True
+omit =
     */tests/*
     */test_*
     */__pycache__/*
@@ -40,3 +41,8 @@ title = PyRustor Coverage Report
 
 [xml]
 output = coverage.xml
+
+[paths]
+source =
+    python/pyrustor
+    */python/pyrustor

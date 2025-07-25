@@ -11,52 +11,31 @@ permissions:
   contents: read
 
 jobs:
-  # Code quality and testing
-  test:
-    name: Test Suite
-    runs-on: ${{ matrix.os }}
+  # Quick validation - runs on every PR
+  quick-test:
+    name: Quick Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.8", "3.10", "3.12"]  # Test min, stable, and recent stable
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
         with:
           python-version: ${{ matrix.python-version }}
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-      
-      - name: Install just
-        uses: extractions/setup-just@v3
+          rust-components: 'clippy'
+          cache-key-suffix: 'quick-test'
 
-      - name: Install dependencies
-        run: just ci-install
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+          generate-stubs: 'true'
 
-      - name: Build extension
-        run: just ci-build
-        env:
-          RUST_BACKTRACE: 1
-
-      - name: Generate type stubs
-        run: just ci-stubs
-
-      - name: Run Rust tests
-        run: just ci-test-rust
-
-      - name: Run Python tests
-        run: just ci-test-python
-        env:
-          PYTHONUNBUFFERED: 1
-
-      - name: Run basic functionality tests
-        run: just ci-test-basic
-
-  # Code formatting and linting
+  # Code quality and linting - runs on every PR
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
@@ -64,118 +43,106 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
         with:
-          python-version: "3.11"
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Install dependencies
-        run: just ci-install
+          python-version: "3.10"
+          rust-components: 'rustfmt,clippy'
+          cache-key-suffix: 'lint'
 
       - name: Check version consistency
+        id: version-check
         run: just check-version
+        continue-on-error: true
+
+      - name: Version sync guidance
+        if: steps.version-check.outcome == 'failure'
+        run: |
+          echo "## ❌ Version Consistency Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The version numbers in your project files are not synchronized." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 How to fix:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Automatic fix**: Go to Actions → Version Synchronization → Run workflow" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Manual fix**: Update version numbers in Cargo.toml and pyproject.toml to match" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Quick fix**: Add a comment \`/sync-version\` to this PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Files to check:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`Cargo.toml\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pyproject.toml\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`package.json\` (if exists)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **This step provides guidance only and won't fail the workflow**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail on version inconsistency
+        if: steps.version-check.outcome == 'failure'
+        run: |
+          echo "❌ Version consistency check failed. Please fix the version mismatch."
+          echo "See the step summary above for detailed instructions."
+          exit 1
 
       - name: Run linting and formatting checks
         run: just ci-lint
 
-  # Wheel building and installation tests for PR validation
-  wheel-test:
-    name: Wheel Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+  # Comprehensive testing - runs on main branch and when requested
+  full-test:
+    name: Full Test Suite (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full-ci') || github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.11", "3.13"]
+        python-version: ["3.8", "3.10", "3.12"]
         include:
-          # Test additional Python versions on Ubuntu only to save CI time
+          # Test additional Python versions on Ubuntu only
           - os: ubuntu-latest
             python-version: "3.9"
           - os: ubuntu-latest
-            python-version: "3.10"
+            python-version: "3.11"
+          # Test Python 3.13 only on Ubuntu (most stable platform)
           - os: ubuntu-latest
-            python-version: "3.12"
+            python-version: "3.13"
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache-key-suffix: 'full-test-${{ matrix.os }}'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'full'
+          upload-artifacts: 'true'
+          artifact-name: 'full-test-results-${{ matrix.os }}-py${{ matrix.python-version }}'
+
+  # Wheel testing - only for critical combinations
+  wheel-test:
+    name: Wheel Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'test-wheels')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.10"]  # Test min and stable versions
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - name: Build and Test Wheel
+        uses: ./.github/actions/build-wheel
         with:
           python-version: ${{ matrix.python-version }}
+          test-wheel: 'true'
+          upload-wheel: 'true'
+          artifact-name: 'test-wheels'
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Install maturin
-        run: |
-          # Create a temporary virtual environment for maturin
-          uv venv .maturin-env --python ${{ matrix.python-version }}
-          uv pip install maturin --python .maturin-env
-
-      - name: Build wheel
-        run: uv run --python .maturin-env maturin build --release --out dist --find-interpreter
-        env:
-          RUST_BACKTRACE: 1
-
-      - name: List built wheels
-        run: |
-          echo "Built wheels:"
-          ls -la dist/
-          echo "Wheel contents:"
-          python -m zipfile -l dist/*.whl || true
-        shell: bash
-
-      - name: Test wheel installation in clean environment
-        run: |
-          # Create a clean virtual environment
-          python -m venv test-env
-
-          # Activate and install the wheel
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            ./test-env/Scripts/activate
-            pip install pyrustor --find-links dist --force-reinstall
-          else
-            source test-env/bin/activate
-            pip install pyrustor --find-links dist --force-reinstall
-          fi
-
-          # Test basic functionality
-          python -c "import pyrustor; print('[OK] PyRustor imported successfully')"
-          python -c "import pyrustor; parser = pyrustor.Parser(); print('[OK] Parser created successfully')"
-          python -c "import pyrustor; print('[OK] Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
-        shell: bash
-        env:
-          PYTHONUNBUFFERED: 1
-
-      - name: Test wheel with dependencies
-        run: |
-          # Install test dependencies and run integrity test
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            ./test-env/Scripts/activate
-            pip install pytest
-            python scripts/test_wheel_integrity.py
-          else
-            source test-env/bin/activate
-            pip install pytest
-            python scripts/test_wheel_integrity.py
-          fi
-        shell: bash
-        env:
-          PYTHONUNBUFFERED: 1
-
-  # Documentation tests
+  # Documentation tests - lightweight
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -183,8 +150,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-docs-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-docs-
+            ${{ runner.os }}-cargo-
 
       - name: Run doc tests
         run: cargo test --doc
@@ -192,70 +173,43 @@ jobs:
       - name: Check documentation
         run: cargo doc --no-deps --document-private-items
 
-  # Benchmark tests
+  # Benchmark tests - only on main or when requested
   benchmark:
     name: Benchmark Tests
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'benchmark')
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
         with:
           python-version: "3.11"
+          cache-key-suffix: 'benchmark'
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies
-        run: uv sync --group dev
-
-      - name: Build extension (release mode)
-        run: uv run maturin develop --release
-        env:
-          RUST_BACKTRACE: 1
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Run benchmark tests
-        run: just ci-test-python-benchmark
-        env:
-          PYTHONUNBUFFERED: 1
-
-      - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
-        if: always()
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
         with:
-          name: benchmark-results-${{ github.run_id }}
-          path: |
-            .pytest_cache/
-            htmlcov/
+          test-type: 'benchmark'
+          upload-artifacts: 'true'
+          artifact-name: 'benchmark-results'
 
-  # Security and quality checks
+  # Security checks - only on main or when requested
   security:
     name: Security & Quality
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'security-check')
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
         with:
           python-version: "3.11"
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-
-      - name: Install dependencies
-        run: just ci-install
+          rust-components: 'clippy'
+          cache-key-suffix: 'security'
 
       - name: Run security audit (Rust)
         run: |
@@ -276,52 +230,4 @@ jobs:
           path: |
             safety-report.json
             bandit-report.json
-
-  # Cross-platform compatibility test (reduced matrix)
-  compatibility:
-    name: Cross-Platform (${{ matrix.os }}, Python ${{ matrix.python-version }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.10', '3.11', '3.12']
-        exclude:
-          # Reduce matrix size for faster CI
-          - os: macos-latest
-            python-version: '3.10'
-          - os: windows-latest
-            python-version: '3.10'
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install just
-        uses: extractions/setup-just@v3
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies
-        run: just ci-install
-
-      - name: Build extension
-        run: just ci-build
-        env:
-          RUST_BACKTRACE: 1
-
-      - name: Run basic tests
-        run: just ci-test-basic
-        env:
-          PYTHONUNBUFFERED: 1
-
-      - name: Run core functionality tests
-        run: uv run python -m pytest tests/test_basic.py tests/test_parser.py tests/test_refactor.py -v --tb=short
-        env:
-          PYTHONUNBUFFERED: 1
+          retention-days: 30

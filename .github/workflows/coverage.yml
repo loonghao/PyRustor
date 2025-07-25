@@ -5,6 +5,13 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - 'crates/**'
+      - 'python/**'
+      - 'tests/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'pyproject.toml'
 
 permissions:
   contents: read
@@ -18,21 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Install just
-        uses: extractions/setup-just@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
         with:
           python-version: '3.11'
-      
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "latest"
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+          cache-key-suffix: 'coverage'
       
       - name: Install coverage tools
         run: just install-coverage-tools
@@ -63,7 +60,7 @@ jobs:
           cat pyproject.toml | grep -A 10 "\[tool.coverage"
       
       - name: Upload Rust coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v4
         with:
           file: target/tarpaulin/cobertura.xml
           flags: rust
@@ -71,7 +68,7 @@ jobs:
           fail_ci_if_error: false
       
       - name: Upload Python coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v4
         with:
           file: coverage.xml
           flags: python
@@ -79,7 +76,7 @@ jobs:
           fail_ci_if_error: false
       
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
@@ -87,12 +84,13 @@ jobs:
       - name: Archive coverage reports
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports
+          name: coverage-reports-${{ github.run_id }}
           path: |
             htmlcov/
             target/tarpaulin/
             coverage.xml
             target/tarpaulin/cobertura.xml
+          retention-days: 30
       
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'

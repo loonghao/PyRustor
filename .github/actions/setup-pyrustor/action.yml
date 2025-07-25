@@ -63,7 +63,7 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Install just
-      uses: extractions/setup-just@v2
+      uses: extractions/setup-just@v3
 
     - name: Install dependencies
       if: inputs.install-dependencies == 'true'

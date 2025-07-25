@@ -51,7 +51,29 @@ jobs:
           cache-key-suffix: 'lint'
 
       - name: Check version consistency
+        id: version-check
         run: just check-version
+        continue-on-error: true
+
+      - name: Version sync guidance
+        if: steps.version-check.outcome == 'failure'
+        run: |
+          echo "## ❌ Version Consistency Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The version numbers in your project files are not synchronized." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 How to fix:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Automatic fix**: Go to Actions → Version Synchronization → Run workflow" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Manual fix**: Update version numbers in Cargo.toml and pyproject.toml to match" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Quick fix**: Add a comment \`/sync-version\` to this PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Files to check:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`Cargo.toml\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pyproject.toml\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`package.json\` (if exists)" >> $GITHUB_STEP_SUMMARY
+
+          # Fail the step to make it clear this needs attention
+          exit 1
 
       - name: Run linting and formatting checks
         run: just ci-lint

@@ -1,0 +1,178 @@
+name: Version Synchronization
+
+on:
+  workflow_dispatch:
+    inputs:
+      target-version:
+        description: 'Target version to sync to (leave empty to use Cargo.toml version)'
+        required: false
+        default: ''
+      dry-run:
+        description: 'Only check versions without making changes'
+        type: boolean
+        required: false
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - 'Cargo.toml'
+      - 'pyproject.toml'
+      - 'package.json'
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - 'pyproject.toml'
+      - 'package.json'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-versions:
+    name: Check Version Consistency
+    runs-on: ubuntu-latest
+    
+    outputs:
+      needs-sync: ${{ steps.check.outputs.needs-sync }}
+      current-version: ${{ steps.check.outputs.version }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check version consistency
+        id: check
+        uses: ./.github/actions/sync-versions
+        with:
+          target-version: ${{ github.event.inputs.target-version }}
+          dry-run: 'true'
+
+      - name: Set output
+        run: |
+          if [ "${{ steps.check.outputs.version-synced }}" = "false" ]; then
+            echo "needs-sync=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs-sync=false" >> $GITHUB_OUTPUT
+          fi
+          echo "version=${{ steps.check.outputs.current-version }}" >> $GITHUB_OUTPUT
+
+  sync-versions:
+    name: Sync Versions
+    runs-on: ubuntu-latest
+    needs: check-versions
+    if: |
+      needs.check-versions.outputs.needs-sync == 'true' && 
+      (github.event_name == 'workflow_dispatch' && !github.event.inputs.dry-run) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Sync versions
+        id: sync
+        uses: ./.github/actions/sync-versions
+        with:
+          target-version: ${{ github.event.inputs.target-version }}
+          dry-run: 'false'
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has-changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.has-changes == 'true'
+        run: |
+          git add -A
+          git commit -m "chore: sync version to ${{ steps.sync.outputs.current-version }}
+
+          Synchronized version numbers across:
+          - Cargo.toml
+          - pyproject.toml
+          - package.json (if exists)
+          
+          All files now use version ${{ steps.sync.outputs.current-version }}"
+
+      - name: Push changes
+        if: steps.changes.outputs.has-changes == 'true' && github.event_name == 'push'
+        run: |
+          git push origin ${{ github.ref_name }}
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has-changes == 'true' && github.event_name == 'workflow_dispatch'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: sync version to ${{ steps.sync.outputs.current-version }}"
+          title: "🔄 Sync version to ${{ steps.sync.outputs.current-version }}"
+          body: |
+            ## Version Synchronization
+            
+            This PR synchronizes version numbers across all project files.
+            
+            **Target Version**: `${{ steps.sync.outputs.current-version }}`
+            
+            ### Files Updated:
+            - ✅ Cargo.toml
+            - ✅ pyproject.toml
+            - ✅ package.json (if exists)
+            
+            ### Changes Made:
+            - All version numbers are now consistent
+            - Ready for release process
+            
+            This PR was automatically created by the version sync workflow.
+          branch: sync-version-${{ steps.sync.outputs.current-version }}
+          delete-branch: true
+
+  validate-sync:
+    name: Validate Version Sync
+    runs-on: ubuntu-latest
+    needs: [check-versions, sync-versions]
+    if: always()
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Final validation
+        uses: ./.github/actions/sync-versions
+        with:
+          dry-run: 'true'
+
+      - name: Report status
+        run: |
+          echo "## Version Sync Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.check-versions.outputs.needs-sync }}" = "true" ]; then
+            echo "❌ **Version inconsistency detected**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Target version: \`${{ needs.check-versions.outputs.current-version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "${{ needs.sync-versions.result }}" = "success" ]; then
+              echo "✅ **Versions have been synchronized**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **Manual intervention required**" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "Please run the version sync workflow manually or update versions manually." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "✅ **All versions are consistent**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Current version: \`${{ needs.check-versions.outputs.current-version }}\`" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -52,6 +52,15 @@ jobs:
         run: just coverage-python-ci
         env:
           PYTHONUNBUFFERED: 1
+
+      - name: Debug coverage files
+        run: |
+          echo "Checking for coverage files..."
+          ls -la .coverage* || echo "No .coverage files found"
+          ls -la coverage.xml || echo "No coverage.xml found"
+          echo "Current directory: $(pwd)"
+          echo "Coverage config:"
+          cat pyproject.toml | grep -A 10 "\[tool.coverage"
       
       - name: Upload Rust coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -92,3 +101,5 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MINIMUM_GREEN: 80
           MINIMUM_ORANGE: 70
+          COVERAGE_PATH: .
+          MERGE_COVERAGE_FILES: false

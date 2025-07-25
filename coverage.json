@@ -1,0 +1,99 @@
+{
+    "meta": {
+        "format": 3,
+        "version": "7.9.2",
+        "timestamp": "2025-07-25T15:28:34.959910",
+        "branch_coverage": true,
+        "show_contexts": false
+    },
+    "files": {
+        "python\\pyrustor\\__init__.py": {
+            "executed_lines": [
+                1,
+                17,
+                29,
+                31
+            ],
+            "summary": {
+                "covered_lines": 3,
+                "num_statements": 3,
+                "percent_covered": 100.0,
+                "percent_covered_display": "100.00",
+                "missing_lines": 0,
+                "excluded_lines": 0,
+                "num_branches": 0,
+                "num_partial_branches": 0,
+                "covered_branches": 0,
+                "missing_branches": 0
+            },
+            "missing_lines": [],
+            "excluded_lines": [],
+            "executed_branches": [],
+            "missing_branches": [],
+            "functions": {
+                "": {
+                    "executed_lines": [
+                        1,
+                        17,
+                        29,
+                        31
+                    ],
+                    "summary": {
+                        "covered_lines": 3,
+                        "num_statements": 3,
+                        "percent_covered": 100.0,
+                        "percent_covered_display": "100.00",
+                        "missing_lines": 0,
+                        "excluded_lines": 0,
+                        "num_branches": 0,
+                        "num_partial_branches": 0,
+                        "covered_branches": 0,
+                        "missing_branches": 0
+                    },
+                    "missing_lines": [],
+                    "excluded_lines": [],
+                    "executed_branches": [],
+                    "missing_branches": []
+                }
+            },
+            "classes": {
+                "": {
+                    "executed_lines": [
+                        1,
+                        17,
+                        29,
+                        31
+                    ],
+                    "summary": {
+                        "covered_lines": 3,
+                        "num_statements": 3,
+                        "percent_covered": 100.0,
+                        "percent_covered_display": "100.00",
+                        "missing_lines": 0,
+                        "excluded_lines": 0,
+                        "num_branches": 0,
+                        "num_partial_branches": 0,
+                        "covered_branches": 0,
+                        "missing_branches": 0
+                    },
+                    "missing_lines": [],
+                    "excluded_lines": [],
+                    "executed_branches": [],
+                    "missing_branches": []
+                }
+            }
+        }
+    },
+    "totals": {
+        "covered_lines": 3,
+        "num_statements": 3,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100.00",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "num_branches": 0,
+        "num_partial_branches": 0,
+        "covered_branches": 0,
+        "missing_branches": 0
+    }
+}

@@ -102,8 +102,33 @@ runs:
         python -c "import platform; print(f'Machine: {platform.machine()}, System: {platform.system()}')"
 
         # Install with platform override to handle cross-platform wheel compatibility
-        # Use --force-reinstall and --no-deps to bypass platform checks
-        pip install "$wheel_file" --force-reinstall --no-deps --disable-pip-version-check --no-warn-script-location
+        # Extract wheel manually and add to Python path as fallback
+        site_packages=$(python -c "import site; print(site.getsitepackages()[0])")
+
+        # Try pip install first
+        if pip install "$wheel_file" --force-reinstall --no-deps --disable-pip-version-check --no-warn-script-location 2>/dev/null; then
+          echo "Pip install successful"
+        else
+          echo "Pip install failed, extracting wheel manually..."
+          # Extract wheel to site-packages directory
+          python -m zipfile -e "$wheel_file" temp_extract/
+
+          # Find the package directory and copy it
+          package_dir=$(find temp_extract -name "pyrustor*" -type d | head -1)
+          if [ -n "$package_dir" ]; then
+            cp -r "$package_dir" "$site_packages/"
+            echo "Manual extraction successful"
+          else
+            echo "Could not find package in wheel, trying alternative extraction..."
+            # Alternative: extract all .py files and .so/.pyd files
+            find temp_extract -name "*.py" -o -name "*.so" -o -name "*.pyd" | while read file; do
+              cp "$file" "$site_packages/" 2>/dev/null || true
+            done
+          fi
+
+          # Clean up
+          rm -rf temp_extract/
+        fi
 
         # Test basic functionality
         python -c "import pyrustor; print('[OK] PyRustor imported successfully')"

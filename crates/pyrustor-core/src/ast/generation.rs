@@ -155,6 +155,32 @@ impl PythonAst {
                 Ok(result)
             }
 
+            Stmt::For(for_stmt) => {
+                // For loop statement
+                let target = Self::generate_expression(&for_stmt.target)?;
+                let iter = Self::generate_expression(&for_stmt.iter)?;
+                let mut result = format!("{}for {} in {}:\n", indent_str, target, iter);
+
+                // Generate body statements
+                for body_stmt in &for_stmt.body {
+                    let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
+                    result.push_str(&body_code);
+                    result.push('\n');
+                }
+
+                // Handle else clause if present
+                if !for_stmt.orelse.is_empty() {
+                    result.push_str(&format!("{}else:\n", indent_str));
+                    for else_stmt in &for_stmt.orelse {
+                        let else_code = Self::generate_statement_impl(else_stmt, indent_level + 1)?;
+                        result.push_str(&else_code);
+                        result.push('\n');
+                    }
+                }
+
+                Ok(result.trim_end().to_string())
+            }
+
             // Add more statement types as needed
             _ => Err(PyRustorError::ast_error(format!(
                 "Unsupported statement type: {:?}",
@@ -172,7 +198,7 @@ impl PythonAst {
 
             Expr::StringLiteral(s) => {
                 // Simple string literal generation
-                Ok(format!("\"{}\"", s.value))
+                Ok(format!("\"{}\"", s.value.to_str()))
             }
 
             Expr::NumberLiteral(n) => Ok(format!("{:?}", n.value)),
@@ -228,6 +254,76 @@ impl PythonAst {
                 let value = Self::generate_expression(&subscript.value)?;
                 let slice = Self::generate_expression(&subscript.slice)?;
                 Ok(format!("{}[{}]", value, slice))
+            }
+
+            Expr::FString(_) => {
+                // F-string support - simplified placeholder implementation
+                // TODO: Implement proper f-string generation
+                Ok("f\"<f-string>\"".to_string())
+            }
+
+            Expr::List(list) => {
+                // List literal support
+                let mut result = String::from("[");
+                for (i, element) in list.elts.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&Self::generate_expression(element)?);
+                }
+                result.push(']');
+                Ok(result)
+            }
+
+            Expr::Tuple(tuple) => {
+                // Tuple literal support
+                let mut result = String::from("(");
+                for (i, element) in tuple.elts.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&Self::generate_expression(element)?);
+                }
+                // Add trailing comma for single-element tuples
+                if tuple.elts.len() == 1 {
+                    result.push(',');
+                }
+                result.push(')');
+                Ok(result)
+            }
+
+            Expr::Dict(dict) => {
+                // Dictionary literal support
+                let mut result = String::from("{");
+                for (i, item) in dict.items.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    if let Some(key) = &item.key {
+                        result.push_str(&Self::generate_expression(key)?);
+                        result.push_str(": ");
+                        result.push_str(&Self::generate_expression(&item.value)?);
+                    } else {
+                        // Handle dictionary unpacking like **other_dict
+                        result.push_str("**");
+                        result.push_str(&Self::generate_expression(&item.value)?);
+                    }
+                }
+                result.push('}');
+                Ok(result)
+            }
+
+            Expr::Set(set) => {
+                // Set literal support
+                let mut result = String::from("{");
+                for (i, element) in set.elts.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&Self::generate_expression(element)?);
+                }
+                result.push('}');
+                Ok(result)
             }
 
             // Add more expression types as needed

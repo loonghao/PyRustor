@@ -10,8 +10,8 @@ permissions:
   issues: write
 
 jobs:
-  handle-commands:
-    name: Handle PR Commands
+  sync-version:
+    name: Sync Version Command
     runs-on: ubuntu-latest
     if: github.event.issue.pull_request && contains(github.event.comment.body, '/sync-version')
     

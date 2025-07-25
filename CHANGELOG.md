@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.3...pyrustor-v0.1.4) (2025-07-25)
+
+
+### Features
+
+* add CI optimization validation test suite ([382617b](https://github.com/loonghao/PyRustor/commit/382617b64e365703fcd7bfc05d89dcea55031b94))
+* add comprehensive version synchronization system ([95017bf](https://github.com/loonghao/PyRustor/commit/95017bffbd257401fc94be379f8ea7f42fc9be2f))
+* optimize CI configuration with reusable components ([f4733a0](https://github.com/loonghao/PyRustor/commit/f4733a062a783b0d8c08239099c34dcd833267a9))
+
+
+### Bug Fixes
+
+* add intelligent architecture compatibility checking for wheel tests ([1e1134a](https://github.com/loonghao/PyRustor/commit/1e1134a12b15b5e7e900ec9b3f6478b5dccb02b0))
+* add robust wheel installation with manual extraction fallback ([21ac4e4](https://github.com/loonghao/PyRustor/commit/21ac4e4db3f15a44a8c8abd6e01e96a56b9ca96e))
+* resolve macOS wheel platform compatibility issue ([fa3a08e](https://github.com/loonghao/PyRustor/commit/fa3a08e614a9b2620255026ad22e9315ff62dd9c))
+* resolve Python 3.13 compatibility issues in CI ([4512d1b](https://github.com/loonghao/PyRustor/commit/4512d1b9f956247e3546874d5624503e5234f57c))
+* resolve version consistency and improve CI error handling ([9aa344f](https://github.com/loonghao/PyRustor/commit/9aa344f216c6f314bea14112b330d9326efae6fe))
+* resolve Windows wheel installation issue in CI ([f748b58](https://github.com/loonghao/PyRustor/commit/f748b58e4cfb677ac382b455de93b29ed1ca90b2))
+* switch to Python 3.10 for better cross-platform compatibility ([920aa6c](https://github.com/loonghao/PyRustor/commit/920aa6c86c19fa18606322edeaeace3fed4ea3b3))
+
+
+### Code Refactoring
+
+* clean up CI workflows by renaming optimized versions ([683fe54](https://github.com/loonghao/PyRustor/commit/683fe549af9f3d55dd0f9df64b5683a4d9426d2f))
+
+
+### Documentation
+
+* update optimization summary with version sync system and test results ([be18cce](https://github.com/loonghao/PyRustor/commit/be18cce286657f69613c5795ac815f2799cceee3))
+
 ## [0.1.3](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.2...pyrustor-v0.1.3) (2025-07-25)
 
 

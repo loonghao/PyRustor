@@ -127,9 +127,9 @@ ci-test-python-benchmark:
 
 ci-test-basic:
     @echo "🧪 Running basic functionality tests..."
-    uv run python -c 'import pyrustor; print("PyRustor imported successfully")'
-    uv run python -c 'import pyrustor; parser = pyrustor.Parser(); print("Parser created successfully")'
-    uv run python -c 'import pyrustor; print("Available attributes:", [attr for attr in dir(pyrustor) if not attr.startswith("_")])'
+    uv run python -c "import pyrustor; print('PyRustor imported successfully')"
+    uv run python -c "import pyrustor; parser = pyrustor.Parser(); print('Parser created successfully')"
+    uv run python -c "import pyrustor; print('Available attributes:', [attr for attr in dir(pyrustor) if not attr.startswith('_')])"
 
 ci-lint:
     @echo "🔍 Running CI linting..."

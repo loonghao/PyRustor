@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.2...pyrustor-v0.1.3) (2025-07-25)
+
+
+### Features
+
+* add support for collections and for loops in AST generation ([f8e7c33](https://github.com/loonghao/PyRustor/commit/f8e7c336a25315bbead193eed00e260880c61e4e))
+* comprehensive development infrastructure improvements ([00fbcf1](https://github.com/loonghao/PyRustor/commit/00fbcf1310fea4fb43f23b6922a70ca5b186a827))
+* comprehensive test coverage improvements and bug fixes ([8f7b6fc](https://github.com/loonghao/PyRustor/commit/8f7b6fc2f93ad64ac9d404b1f6968d6476322ea3))
+* implement comprehensive bottom-level API and fix all test failures ([31d5437](https://github.com/loonghao/PyRustor/commit/31d5437b5459832e58ffdde6d357af623c91d497))
+
+
+### Bug Fixes
+
+* allow CI tests to continue despite expected failures ([7aa6880](https://github.com/loonghao/PyRustor/commit/7aa68803cce0a3eddf1fdc6b28cca08fe62dee3d))
+* correct coverage action configuration and CI command syntax ([78139f4](https://github.com/loonghao/PyRustor/commit/78139f4e9d511a0477703fbf6d6d9d8931a0b6bd))
+* correct syntax error in ci-test-basic command ([e0f7765](https://github.com/loonghao/PyRustor/commit/e0f77653d652e1e86a927433670e934ce8cd1ca6))
+* create virtual environment for maturin installation ([ffce75e](https://github.com/loonghao/PyRustor/commit/ffce75eaf84469f0919b3a00bfa0a9c00640c10d))
+* implement proper get_code functionality and improve CI ([9832d23](https://github.com/loonghao/PyRustor/commit/9832d23f4bbae86d9f77b1fd7a22960e6ff5751e))
+* improve coverage configuration for CI compatibility ([0052901](https://github.com/loonghao/PyRustor/commit/0052901cba1ec1663b23a524ce39e05a5c07337f))
+* improve PR testing and version synchronization ([146dcd1](https://github.com/loonghao/PyRustor/commit/146dcd11100530a35ec87f3ec8624aaf5eba4a5b))
+* resolve CI coverage failures after AST refactoring ([e6e6c62](https://github.com/loonghao/PyRustor/commit/e6e6c62bc5e95b3fbfb3d81399b128533a88bbc3))
+* resolve CI failures and improve command compatibility ([e9bbe81](https://github.com/loonghao/PyRustor/commit/e9bbe81bd700a78d8a317b926881451a281bdba9))
+* resolve coverage action failures with relative paths and permissions ([643b0f9](https://github.com/loonghao/PyRustor/commit/643b0f98af1e0479a8109a384702405c6c724eb7))
+* resolve Unicode encoding errors and test failures in CI ([bc54cd4](https://github.com/loonghao/PyRustor/commit/bc54cd4ae5cd0c2d000033c3959504513b919695))
+* use standard venv instead of uv venv in CI ([c7a8405](https://github.com/loonghao/PyRustor/commit/c7a840545c9f0508c388b248c4b9c2046e7ee874))
+
+
+### Code Refactoring
+
+* modularize AST code into separate modules ([9909497](https://github.com/loonghao/PyRustor/commit/99094975409149e2b8c93cede9cc56aad3dab1c0))
+
 ## [0.1.2](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.1...pyrustor-v0.1.2) (2025-07-22)
 
 

@@ -71,8 +71,14 @@ jobs:
           echo "- \`Cargo.toml\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`pyproject.toml\`" >> $GITHUB_STEP_SUMMARY
           echo "- \`package.json\` (if exists)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **This step provides guidance only and won't fail the workflow**" >> $GITHUB_STEP_SUMMARY
 
-          # Fail the step to make it clear this needs attention
+      - name: Fail on version inconsistency
+        if: steps.version-check.outcome == 'failure'
+        run: |
+          echo "❌ Version consistency check failed. Please fix the version mismatch."
+          echo "See the step summary above for detailed instructions."
           exit 1
 
       - name: Run linting and formatting checks

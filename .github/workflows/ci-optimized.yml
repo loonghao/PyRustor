@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.11", "3.12"]  # Test min, stable, and recent stable
+        python-version: ["3.8", "3.10", "3.12"]  # Test min, stable, and recent stable
     
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
         with:
-          python-version: "3.11"
+          python-version: "3.10"
           rust-components: 'rustfmt,clippy'
           cache-key-suffix: 'lint'
 
@@ -93,13 +93,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.11", "3.12"]
+        python-version: ["3.8", "3.10", "3.12"]
         include:
           # Test additional Python versions on Ubuntu only
           - os: ubuntu-latest
             python-version: "3.9"
           - os: ubuntu-latest
-            python-version: "3.10"
+            python-version: "3.11"
           # Test Python 3.13 only on Ubuntu (most stable platform)
           - os: ubuntu-latest
             python-version: "3.13"
@@ -129,7 +129,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.12"]  # Test min and stable versions
+        python-version: ["3.8", "3.10"]  # Test min and stable versions
 
     steps:
       - uses: actions/checkout@v4

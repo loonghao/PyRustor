@@ -16,6 +16,11 @@
           "type": "toml",
           "path": "Cargo.toml",
           "jsonpath": "$.workspace.package.version"
+        },
+        {
+          "type": "generic",
+          "path": "python/pyrustor/__init__.py",
+          "glob": true
         }
       ]
     }

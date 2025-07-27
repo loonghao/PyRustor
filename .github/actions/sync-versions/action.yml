@@ -41,9 +41,9 @@ runs:
           grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
         }
         
-        # Function to extract version from pyproject.toml
+        # Function to extract version from Python package __init__.py
         get_python_version() {
-          grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/'
+          grep '__version__ = ' python/pyrustor/__init__.py | head -1 | sed 's/__version__ = "\(.*\)"/\1/'
         }
         
         # Function to extract version from package.json (if exists)
@@ -73,7 +73,7 @@ runs:
         
         echo "Current versions:"
         echo "  Cargo.toml: $CARGO_VERSION"
-        echo "  pyproject.toml: $PYTHON_VERSION"
+        echo "  Python package: $PYTHON_VERSION"
         
         # Check if package.json exists
         if [ -f "package.json" ]; then
@@ -89,7 +89,7 @@ runs:
         fi
         
         if [ "$PYTHON_VERSION" != "$TARGET_VERSION" ]; then
-          echo "❌ pyproject.toml version ($PYTHON_VERSION) != target ($TARGET_VERSION)"
+          echo "❌ Python package version ($PYTHON_VERSION) != target ($TARGET_VERSION)"
           NEEDS_SYNC=true
         fi
         
@@ -121,10 +121,10 @@ runs:
           echo "✅ Updated Cargo.toml: $CARGO_VERSION -> $TARGET_VERSION"
         fi
         
-        # Update pyproject.toml
+        # Update Python package __init__.py
         if [ "$PYTHON_VERSION" != "$TARGET_VERSION" ]; then
-          sed -i.bak "s/^version = \".*\"/version = \"$TARGET_VERSION\"/" pyproject.toml
-          echo "✅ Updated pyproject.toml: $PYTHON_VERSION -> $TARGET_VERSION"
+          sed -i.bak "s/__version__ = \".*\"/__version__ = \"$TARGET_VERSION\"/" python/pyrustor/__init__.py
+          echo "✅ Updated Python package: $PYTHON_VERSION -> $TARGET_VERSION"
         fi
         
         # Update package.json if it exists
@@ -147,11 +147,11 @@ runs:
         echo "🔍 Verifying version synchronization..."
         
         CARGO_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-        PYTHON_VERSION=$(grep '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
-        
+        PYTHON_VERSION=$(grep '__version__ = ' python/pyrustor/__init__.py | head -1 | sed 's/__version__ = "\(.*\)"/\1/')
+
         echo "Final versions:"
         echo "  Cargo.toml: $CARGO_VERSION"
-        echo "  pyproject.toml: $PYTHON_VERSION"
+        echo "  Python package: $PYTHON_VERSION"
         
         if [ -f "package.json" ]; then
           PACKAGE_VERSION=$(grep '"version":' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')

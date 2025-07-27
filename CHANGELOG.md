@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.4...pyrustor-v0.1.5) (2025-07-27)
+
+
+### Bug Fixes
+
+* add pytest-cov dependency for ABI3 builds and update Python version ([dbb21db](https://github.com/loonghao/PyRustor/commit/dbb21db39e4aea895129c3464b6503f53790da76))
+* sync Python package version to 0.1.4 ([19a70db](https://github.com/loonghao/PyRustor/commit/19a70db02c59da1dc9484f924a7480f8b6604fb6))
+
 ## [0.1.4](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.3...pyrustor-v0.1.4) (2025-07-25)
 
 

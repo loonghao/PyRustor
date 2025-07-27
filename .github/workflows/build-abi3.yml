@@ -39,7 +39,7 @@ jobs:
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov psutil
           python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
       
       - name: Upload wheels
@@ -75,7 +75,7 @@ jobs:
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov psutil
           python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
       
       - name: Upload wheels
@@ -119,7 +119,7 @@ jobs:
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov psutil
           python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
 
       - name: Upload wheels

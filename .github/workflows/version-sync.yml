@@ -16,12 +16,12 @@ on:
     branches: [main]
     paths:
       - 'Cargo.toml'
-      - 'pyproject.toml'
+      - 'python/pyrustor/__init__.py'
       - 'package.json'
   pull_request:
     paths:
       - 'Cargo.toml'
-      - 'pyproject.toml'
+      - 'python/pyrustor/__init__.py'
       - 'package.json'
 
 permissions:
@@ -100,7 +100,7 @@ jobs:
 
           Synchronized version numbers across:
           - Cargo.toml
-          - pyproject.toml
+          - python/pyrustor/__init__.py
           - package.json (if exists)
           
           All files now use version ${{ steps.sync.outputs.current-version }}"
@@ -126,7 +126,7 @@ jobs:
             
             ### Files Updated:
             - ✅ Cargo.toml
-            - ✅ pyproject.toml
+            - ✅ python/pyrustor/__init__.py
             - ✅ package.json (if exists)
             
             ### Changes Made:

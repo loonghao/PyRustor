@@ -43,6 +43,13 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
+    - name: Install uv (for consistent dependency management)
+      if: inputs.test-wheel == 'true'
+      uses: astral-sh/setup-uv@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+        enable-cache: true
+
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
 
@@ -153,11 +160,23 @@ runs:
           exit 0
         fi
 
+        # Install test dependencies (same as CI and ABI3 builds)
+        echo "📦 Installing test dependencies..."
+        pip install pytest>=7.0.0 pytest-cov>=4.0.0 psutil>=5.9.0 --disable-pip-version-check
+
         # Run integrity test if available
         if [ -f "scripts/test_wheel_integrity.py" ]; then
-          pip install pytest
+          echo "🔍 Running wheel integrity tests..."
           python scripts/test_wheel_integrity.py
+        else
+          echo "🔍 Running basic import tests..."
+          python -c "import pyrustor; print('✅ PyRustor imported successfully')"
+          python -c "import pyrustor; parser = pyrustor.Parser(); print('✅ Parser created successfully')"
         fi
+
+        # Run pytest with same configuration as CI
+        echo "🧪 Running pytest suite..."
+        python -m pytest tests/ -v --tb=short -m "not benchmark and not slow" --maxfail=5
 
         echo "🎉 All wheel tests passed!"
       env:

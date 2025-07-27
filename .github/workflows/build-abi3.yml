@@ -39,8 +39,8 @@ jobs:
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py
-          pip install pytest pytest-cov psutil
-          python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+          pip install pytest>=7.0.0 pytest-cov>=4.0.0 psutil>=5.9.0 --disable-pip-version-check
+          python -m pytest tests/ -v --tb=short -m "not benchmark and not slow" --maxfail=5
       
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -75,8 +75,8 @@ jobs:
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py
-          pip install pytest pytest-cov psutil
-          python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+          pip install pytest>=7.0.0 pytest-cov>=4.0.0 psutil>=5.9.0 --disable-pip-version-check
+          python -m pytest tests/ -v --tb=short -m "not benchmark and not slow" --maxfail=5
       
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -119,8 +119,8 @@ jobs:
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py
-          pip install pytest pytest-cov psutil
-          python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+          pip install pytest>=7.0.0 pytest-cov>=4.0.0 psutil>=5.9.0 --disable-pip-version-check
+          python -m pytest tests/ -v --tb=short -m "not benchmark and not slow" --maxfail=5
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4

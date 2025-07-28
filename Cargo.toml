@@ -20,14 +20,14 @@ readme = "README.md"
 
 [workspace.dependencies]
 # Core parsing dependencies - using Ruff's excellent Python parser
-ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git" }
-ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git" }
-ruff_text_size = { git = "https://github.com/astral-sh/ruff.git" }
-ruff_source_file = { git = "https://github.com/astral-sh/ruff.git" }
+ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
+ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
+ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
+ruff_source_file = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
 
 # Formatting dependencies - using Ruff's formatter
-ruff_python_formatter = { git = "https://github.com/astral-sh/ruff.git" }
-ruff_formatter = { git = "https://github.com/astral-sh/ruff.git" }
+ruff_python_formatter = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
+ruff_formatter = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
 
 # Python bindings
 pyo3 = { version = "0.25", features = ["extension-module"] }

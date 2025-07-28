@@ -191,6 +191,18 @@ impl PythonAst {
                 Stmt::ClassDef(class) => {
                     Self::find_calls_recursive(&class.body, path, calls, function_name);
                 }
+                Stmt::Try(try_stmt) => {
+                    Self::find_calls_recursive(&try_stmt.body, path, calls, function_name);
+                    for handler in &try_stmt.handlers {
+                        match handler {
+                            ruff_python_ast::ExceptHandler::ExceptHandler(eh) => {
+                                Self::find_calls_recursive(&eh.body, path, calls, function_name);
+                            }
+                        }
+                    }
+                    Self::find_calls_recursive(&try_stmt.orelse, path, calls, function_name);
+                    Self::find_calls_recursive(&try_stmt.finalbody, path, calls, function_name);
+                }
                 _ => {}
             }
 

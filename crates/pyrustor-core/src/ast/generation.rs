@@ -102,6 +102,26 @@ impl PythonAst {
                 Ok(format!("{}{}", indent_str, expr_code))
             }
 
+            Stmt::Assign(assign) => {
+                let mut result = String::new();
+                result.push_str(&indent_str);
+
+                // Generate targets (left side of assignment)
+                for (i, target) in assign.targets.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(" = ");
+                    }
+                    result.push_str(&Self::generate_expression(target)?);
+                }
+
+                result.push_str(" = ");
+
+                // Generate value (right side of assignment)
+                result.push_str(&Self::generate_expression(&assign.value)?);
+
+                Ok(result)
+            }
+
             Stmt::Import(import) => {
                 let mut result = format!("{}import ", indent_str);
                 for (i, alias) in import.names.iter().enumerate() {
@@ -139,22 +159,6 @@ impl PythonAst {
                 Ok(result)
             }
 
-            Stmt::Assign(assign) => {
-                let mut result = indent_str.to_string();
-
-                // Handle targets (left side of assignment)
-                for (i, target) in assign.targets.iter().enumerate() {
-                    if i > 0 {
-                        result.push_str(", ");
-                    }
-                    result.push_str(&Self::generate_expression(target)?);
-                }
-
-                result.push_str(" = ");
-                result.push_str(&Self::generate_expression(&assign.value)?);
-                Ok(result)
-            }
-
             Stmt::For(for_stmt) => {
                 // For loop statement
                 let target = Self::generate_expression(&for_stmt.target)?;
@@ -174,6 +178,101 @@ impl PythonAst {
                     for else_stmt in &for_stmt.orelse {
                         let else_code = Self::generate_statement_impl(else_stmt, indent_level + 1)?;
                         result.push_str(&else_code);
+                        result.push('\n');
+                    }
+                }
+
+                Ok(result.trim_end().to_string())
+            }
+
+            Stmt::Try(try_stmt) => {
+                // Try-except statement
+                let mut result = format!("{}try:\n", indent_str);
+
+                // Generate try body
+                for body_stmt in &try_stmt.body {
+                    let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
+                    result.push_str(&body_code);
+                    result.push('\n');
+                }
+
+                // Generate except handlers
+                for handler in &try_stmt.handlers {
+                    match handler {
+                        ruff_python_ast::ExceptHandler::ExceptHandler(eh) => {
+                            result.push_str(&format!("{}except", indent_str));
+
+                            if let Some(exc_type) = &eh.type_ {
+                                result.push(' ');
+                                result.push_str(&Self::generate_expression(exc_type)?);
+                            }
+
+                            if let Some(name) = &eh.name {
+                                result.push_str(" as ");
+                                result.push_str(name);
+                            }
+
+                            result.push_str(":\n");
+
+                            // Generate except body
+                            for except_stmt in &eh.body {
+                                let except_code = Self::generate_statement_impl(except_stmt, indent_level + 1)?;
+                                result.push_str(&except_code);
+                                result.push('\n');
+                            }
+                        }
+                    }
+                }
+
+                // Generate else clause if present
+                if !try_stmt.orelse.is_empty() {
+                    result.push_str(&format!("{}else:\n", indent_str));
+                    for else_stmt in &try_stmt.orelse {
+                        let else_code = Self::generate_statement_impl(else_stmt, indent_level + 1)?;
+                        result.push_str(&else_code);
+                        result.push('\n');
+                    }
+                }
+
+                // Generate finally clause if present
+                if !try_stmt.finalbody.is_empty() {
+                    result.push_str(&format!("{}finally:\n", indent_str));
+                    for finally_stmt in &try_stmt.finalbody {
+                        let finally_code = Self::generate_statement_impl(finally_stmt, indent_level + 1)?;
+                        result.push_str(&finally_code);
+                        result.push('\n');
+                    }
+                }
+
+                Ok(result.trim_end().to_string())
+            }
+
+            Stmt::If(if_stmt) => {
+                // If statement
+                let test = Self::generate_expression(&if_stmt.test)?;
+                let mut result = format!("{}if {}:\n", indent_str, test);
+
+                // Generate if body
+                for body_stmt in &if_stmt.body {
+                    let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
+                    result.push_str(&body_code);
+                    result.push('\n');
+                }
+
+                // Generate elif/else clauses
+                for elif_clause in &if_stmt.elif_else_clauses {
+                    if let Some(test) = &elif_clause.test {
+                        // elif clause
+                        let elif_test = Self::generate_expression(test)?;
+                        result.push_str(&format!("{}elif {}:\n", indent_str, elif_test));
+                    } else {
+                        // else clause
+                        result.push_str(&format!("{}else:\n", indent_str));
+                    }
+
+                    for clause_stmt in &elif_clause.body {
+                        let clause_code = Self::generate_statement_impl(clause_stmt, indent_level + 1)?;
+                        result.push_str(&clause_code);
                         result.push('\n');
                     }
                 }

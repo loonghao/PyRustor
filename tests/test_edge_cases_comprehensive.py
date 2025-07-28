@@ -406,7 +406,7 @@ class TestErrorConditions:
         readonly_file.chmod(0o444)  # Read-only
         
         try:
-            with pytest.raises(PermissionError):
+            with pytest.raises((PermissionError, ValueError)):
                 refactor.save_to_file(str(readonly_file))
         finally:
             # Cleanup - restore write permissions

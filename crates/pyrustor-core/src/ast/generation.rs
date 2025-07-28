@@ -280,6 +280,68 @@ impl PythonAst {
                 Ok(result.trim_end().to_string())
             }
 
+            Stmt::While(while_stmt) => {
+                // While loop statement
+                let test = Self::generate_expression(&while_stmt.test)?;
+                let mut result = format!("{}while {}:\n", indent_str, test);
+
+                // Generate while body
+                for body_stmt in &while_stmt.body {
+                    let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
+                    result.push_str(&body_code);
+                    result.push('\n');
+                }
+
+                // Generate else clause if present
+                if !while_stmt.orelse.is_empty() {
+                    result.push_str(&format!("{}else:\n", indent_str));
+                    for else_stmt in &while_stmt.orelse {
+                        let else_code = Self::generate_statement_impl(else_stmt, indent_level + 1)?;
+                        result.push_str(&else_code);
+                        result.push('\n');
+                    }
+                }
+
+                Ok(result.trim_end().to_string())
+            }
+
+            Stmt::With(with_stmt) => {
+                // With statement (context manager)
+                let mut result = format!("{}with ", indent_str);
+
+                for (i, item) in with_stmt.items.iter().enumerate() {
+                    if i > 0 {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&Self::generate_expression(&item.context_expr)?);
+                    if let Some(optional_vars) = &item.optional_vars {
+                        result.push_str(" as ");
+                        result.push_str(&Self::generate_expression(optional_vars)?);
+                    }
+                }
+
+                result.push_str(":\n");
+
+                // Generate with body
+                for body_stmt in &with_stmt.body {
+                    let body_code = Self::generate_statement_impl(body_stmt, indent_level + 1)?;
+                    result.push_str(&body_code);
+                    result.push('\n');
+                }
+
+                Ok(result.trim_end().to_string())
+            }
+
+            Stmt::Break(_) => {
+                // Break statement
+                Ok(format!("{}break", indent_str))
+            }
+
+            Stmt::Continue(_) => {
+                // Continue statement
+                Ok(format!("{}continue", indent_str))
+            }
+
             // Add more statement types as needed
             _ => Err(PyRustorError::ast_error(format!(
                 "Unsupported statement type: {:?}",
@@ -423,6 +485,218 @@ impl PythonAst {
                 }
                 result.push('}');
                 Ok(result)
+            }
+
+            Expr::Compare(compare) => {
+                // Comparison operations like ==, !=, <, >, etc.
+                let mut result = Self::generate_expression(&compare.left)?;
+
+                for (op, comparator) in compare.ops.iter().zip(compare.comparators.iter()) {
+                    let op_str = match op {
+                        ruff_python_ast::CmpOp::Eq => " == ",
+                        ruff_python_ast::CmpOp::NotEq => " != ",
+                        ruff_python_ast::CmpOp::Lt => " < ",
+                        ruff_python_ast::CmpOp::LtE => " <= ",
+                        ruff_python_ast::CmpOp::Gt => " > ",
+                        ruff_python_ast::CmpOp::GtE => " >= ",
+                        ruff_python_ast::CmpOp::Is => " is ",
+                        ruff_python_ast::CmpOp::IsNot => " is not ",
+                        ruff_python_ast::CmpOp::In => " in ",
+                        ruff_python_ast::CmpOp::NotIn => " not in ",
+                    };
+                    result.push_str(op_str);
+                    result.push_str(&Self::generate_expression(comparator)?);
+                }
+
+                Ok(result)
+            }
+
+            Expr::BoolOp(bool_op) => {
+                // Boolean operations like 'and', 'or'
+                let op_str = match bool_op.op {
+                    ruff_python_ast::BoolOp::And => " and ",
+                    ruff_python_ast::BoolOp::Or => " or ",
+                };
+
+                let mut parts = Vec::new();
+                for value in &bool_op.values {
+                    parts.push(Self::generate_expression(value)?);
+                }
+
+                Ok(parts.join(op_str))
+            }
+
+            Expr::UnaryOp(unary_op) => {
+                // Unary operations like 'not', '-', '+'
+                let op_str = match unary_op.op {
+                    ruff_python_ast::UnaryOp::Not => "not ",
+                    ruff_python_ast::UnaryOp::UAdd => "+",
+                    ruff_python_ast::UnaryOp::USub => "-",
+                    ruff_python_ast::UnaryOp::Invert => "~",
+                };
+
+                let operand = Self::generate_expression(&unary_op.operand)?;
+                Ok(format!("{}{}", op_str, operand))
+            }
+
+            Expr::If(if_exp) => {
+                // Conditional expression (ternary operator)
+                let body = Self::generate_expression(&if_exp.body)?;
+                let test = Self::generate_expression(&if_exp.test)?;
+                let orelse = Self::generate_expression(&if_exp.orelse)?;
+                Ok(format!("{} if {} else {}", body, test, orelse))
+            }
+
+            Expr::Set(set) => {
+                // Set literal
+                let mut elements = Vec::new();
+                for element in &set.elts {
+                    elements.push(Self::generate_expression(element)?);
+                }
+                if elements.is_empty() {
+                    Ok("set()".to_string())
+                } else {
+                    Ok(format!("{{{}}}", elements.join(", ")))
+                }
+            }
+
+            Expr::Slice(slice) => {
+                // Slice expression
+                let mut result = String::new();
+
+                if let Some(lower) = &slice.lower {
+                    result.push_str(&Self::generate_expression(lower)?);
+                }
+                result.push(':');
+
+                if let Some(upper) = &slice.upper {
+                    result.push_str(&Self::generate_expression(upper)?);
+                }
+
+                if let Some(step) = &slice.step {
+                    result.push(':');
+                    result.push_str(&Self::generate_expression(step)?);
+                }
+
+                Ok(result)
+            }
+
+            Expr::Lambda(lambda) => {
+                // Lambda function - simplified implementation
+                let mut result = String::from("lambda");
+
+                // For now, just generate a simple lambda without parameters
+                result.push_str(": ");
+                result.push_str(&Self::generate_expression(&lambda.body)?);
+
+                Ok(result)
+            }
+
+            Expr::Generator(gen) => {
+                // Generator expression
+                let elt = Self::generate_expression(&gen.elt)?;
+                let mut result = format!("({}", elt);
+
+                for comprehension in &gen.generators {
+                    result.push_str(" for ");
+                    result.push_str(&Self::generate_expression(&comprehension.target)?);
+                    result.push_str(" in ");
+                    result.push_str(&Self::generate_expression(&comprehension.iter)?);
+
+                    for if_clause in &comprehension.ifs {
+                        result.push_str(" if ");
+                        result.push_str(&Self::generate_expression(if_clause)?);
+                    }
+                }
+
+                result.push(')');
+                Ok(result)
+            }
+
+            Expr::ListComp(listcomp) => {
+                // List comprehension
+                let elt = Self::generate_expression(&listcomp.elt)?;
+                let mut result = format!("[{}", elt);
+
+                for comprehension in &listcomp.generators {
+                    result.push_str(" for ");
+                    result.push_str(&Self::generate_expression(&comprehension.target)?);
+                    result.push_str(" in ");
+                    result.push_str(&Self::generate_expression(&comprehension.iter)?);
+
+                    for if_clause in &comprehension.ifs {
+                        result.push_str(" if ");
+                        result.push_str(&Self::generate_expression(if_clause)?);
+                    }
+                }
+
+                result.push(']');
+                Ok(result)
+            }
+
+            Expr::SetComp(setcomp) => {
+                // Set comprehension
+                let elt = Self::generate_expression(&setcomp.elt)?;
+                let mut result = format!("{{{}", elt);
+
+                for comprehension in &setcomp.generators {
+                    result.push_str(" for ");
+                    result.push_str(&Self::generate_expression(&comprehension.target)?);
+                    result.push_str(" in ");
+                    result.push_str(&Self::generate_expression(&comprehension.iter)?);
+
+                    for if_clause in &comprehension.ifs {
+                        result.push_str(" if ");
+                        result.push_str(&Self::generate_expression(if_clause)?);
+                    }
+                }
+
+                result.push('}');
+                Ok(result)
+            }
+
+            Expr::DictComp(dictcomp) => {
+                // Dictionary comprehension
+                let key = Self::generate_expression(&dictcomp.key)?;
+                let value = Self::generate_expression(&dictcomp.value)?;
+                let mut result = format!("{{{}: {}", key, value);
+
+                for comprehension in &dictcomp.generators {
+                    result.push_str(" for ");
+                    result.push_str(&Self::generate_expression(&comprehension.target)?);
+                    result.push_str(" in ");
+                    result.push_str(&Self::generate_expression(&comprehension.iter)?);
+
+                    for if_clause in &comprehension.ifs {
+                        result.push_str(" if ");
+                        result.push_str(&Self::generate_expression(if_clause)?);
+                    }
+                }
+
+                result.push('}');
+                Ok(result)
+            }
+
+            Expr::Yield(yield_expr) => {
+                // Yield expression
+                let mut result = String::from("yield");
+                if let Some(value) = &yield_expr.value {
+                    result.push(' ');
+                    result.push_str(&Self::generate_expression(value)?);
+                }
+                Ok(result)
+            }
+
+            Expr::YieldFrom(yield_from) => {
+                // Yield from expression
+                let value = Self::generate_expression(&yield_from.value)?;
+                Ok(format!("yield from {}", value))
+            }
+
+            Expr::Await(await_expr) => {
+                // Await expression
+                let value = Self::generate_expression(&await_expr.value)?;
+                Ok(format!("await {}", value))
             }
 
             // Add more expression types as needed

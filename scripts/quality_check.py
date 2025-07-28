@@ -143,7 +143,7 @@ class QualityChecker:
         print("🔍 Checking Rust security...")
         
         # Install cargo-audit if not available
-        install_result = self.run_command(["cargo", "install", "cargo-audit"])
+        install_result = self.run_command(["cargo", "install", "cargo-audit", "--force"])
         
         result = self.run_command(["cargo", "audit", "--json"])
         

@@ -213,7 +213,7 @@ jobs:
 
       - name: Run security audit (Rust)
         run: |
-          cargo install cargo-audit
+          cargo install cargo-audit --force
           cargo audit
 
       - name: Run security checks (Python)

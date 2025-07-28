@@ -122,6 +122,38 @@ impl PythonAst {
                 Ok(result)
             }
 
+            Stmt::AugAssign(aug_assign) => {
+                // Augmented assignment (+=, -=, *=, etc.)
+                let mut result = String::new();
+                result.push_str(&indent_str);
+
+                // Generate target (left side)
+                result.push_str(&Self::generate_expression(&aug_assign.target)?);
+
+                // Generate operator
+                let op_str = match aug_assign.op {
+                    ruff_python_ast::Operator::Add => " += ",
+                    ruff_python_ast::Operator::Sub => " -= ",
+                    ruff_python_ast::Operator::Mult => " *= ",
+                    ruff_python_ast::Operator::Div => " /= ",
+                    ruff_python_ast::Operator::Mod => " %= ",
+                    ruff_python_ast::Operator::Pow => " **= ",
+                    ruff_python_ast::Operator::LShift => " <<= ",
+                    ruff_python_ast::Operator::RShift => " >>= ",
+                    ruff_python_ast::Operator::BitOr => " |= ",
+                    ruff_python_ast::Operator::BitXor => " ^= ",
+                    ruff_python_ast::Operator::BitAnd => " &= ",
+                    ruff_python_ast::Operator::FloorDiv => " //= ",
+                    _ => " ?= ",
+                };
+                result.push_str(op_str);
+
+                // Generate value (right side)
+                result.push_str(&Self::generate_expression(&aug_assign.value)?);
+
+                Ok(result)
+            }
+
             Stmt::Import(import) => {
                 let mut result = format!("{}import ", indent_str);
                 for (i, alias) in import.names.iter().enumerate() {
@@ -216,7 +248,8 @@ impl PythonAst {
 
                             // Generate except body
                             for except_stmt in &eh.body {
-                                let except_code = Self::generate_statement_impl(except_stmt, indent_level + 1)?;
+                                let except_code =
+                                    Self::generate_statement_impl(except_stmt, indent_level + 1)?;
                                 result.push_str(&except_code);
                                 result.push('\n');
                             }
@@ -238,7 +271,8 @@ impl PythonAst {
                 if !try_stmt.finalbody.is_empty() {
                     result.push_str(&format!("{}finally:\n", indent_str));
                     for finally_stmt in &try_stmt.finalbody {
-                        let finally_code = Self::generate_statement_impl(finally_stmt, indent_level + 1)?;
+                        let finally_code =
+                            Self::generate_statement_impl(finally_stmt, indent_level + 1)?;
                         result.push_str(&finally_code);
                         result.push('\n');
                     }
@@ -271,7 +305,8 @@ impl PythonAst {
                     }
 
                     for clause_stmt in &elif_clause.body {
-                        let clause_code = Self::generate_statement_impl(clause_stmt, indent_level + 1)?;
+                        let clause_code =
+                            Self::generate_statement_impl(clause_stmt, indent_level + 1)?;
                         result.push_str(&clause_code);
                         result.push('\n');
                     }

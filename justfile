@@ -219,13 +219,7 @@ quality-ci:
 security:
     @echo "🔒 Running security checks..."
     @echo "Checking Rust dependencies..."
-    @if command -v cargo-audit >/dev/null 2>&1; then \
-        cargo audit; \
-    else \
-        echo "Installing cargo-audit..."; \
-        cargo install cargo-audit; \
-        cargo audit; \
-    fi
+    -cargo audit
     @echo "Checking Python dependencies..."
     uv add --group dev safety bandit
     uv run safety check

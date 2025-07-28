@@ -582,19 +582,6 @@ impl PythonAst {
                 Ok(format!("{} if {} else {}", body, test, orelse))
             }
 
-            Expr::Set(set) => {
-                // Set literal
-                let mut elements = Vec::new();
-                for element in &set.elts {
-                    elements.push(Self::generate_expression(element)?);
-                }
-                if elements.is_empty() {
-                    Ok("set()".to_string())
-                } else {
-                    Ok(format!("{{{}}}", elements.join(", ")))
-                }
-            }
-
             Expr::Slice(slice) => {
                 // Slice expression
                 let mut result = String::new();

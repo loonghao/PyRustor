@@ -1,5 +1,9 @@
 name: Release
 
+# This workflow is triggered when a release tag is pushed.
+# It only builds and publishes - all testing should have been completed in PR phase.
+# This ensures faster releases and avoids duplicate testing.
+
 on:
   push:
     tags:
@@ -28,17 +32,11 @@ jobs:
       contents: read
       actions: write # Required for uploading artifacts
 
-  # Call the CI workflow to run tests
-  test:
-    uses: ./.github/workflows/ci.yml
-    permissions:
-      contents: read
-
-  # Publish to PyPI
+  # Publish to PyPI - only depends on builds, not tests (tests should pass in PR)
   release:
     name: Publish to PyPI
     runs-on: ubuntu-latest
-    needs: [build, build-abi3, test]
+    needs: [build, build-abi3]
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write

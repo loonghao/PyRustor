@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.5...pyrustor-v0.1.6) (2025-07-29)
+
+
+### Bug Fixes
+
+* add comprehensive AST statement and expression support ([e1a14a2](https://github.com/loonghao/PyRustor/commit/e1a14a223844ade80c65cb82d045156ffe10c8ab))
+* add missing psutil dependency for ABI3 wheel tests ([7f97d0f](https://github.com/loonghao/PyRustor/commit/7f97d0feaccc7b9a4b78fea831256134be6346c9))
+* add support for augmented assignment statements ([7a08edc](https://github.com/loonghao/PyRustor/commit/7a08edcc18693fcea809e072c64784832de69154))
+* add test dependency group to CI installation ([2100ada](https://github.com/loonghao/PyRustor/commit/2100ada17a4101271a4d67f0918e69f6467a1d16))
+* handle permission errors consistently across platforms ([ffad3ae](https://github.com/loonghao/PyRustor/commit/ffad3aeeb65341db30fe66faa720423d0e3aacb5))
+* optimize CI cache configuration to resolve cache warnings ([afb8053](https://github.com/loonghao/PyRustor/commit/afb80535323f3892cb76c5cacfaa5c952e367c11))
+* pin Ruff dependencies to stable version 0.12.5 ([115dd8a](https://github.com/loonghao/PyRustor/commit/115dd8ad7be43404b5590b1a77cbcdc15f028ab9))
+* remove duplicate Expr::Set pattern and debug file ([fd4c4a6](https://github.com/loonghao/PyRustor/commit/fd4c4a6c0f490e39c2a50962d52eca012f2a98d9))
+* resolve cargo-audit installation conflicts in CI ([f48b81f](https://github.com/loonghao/PyRustor/commit/f48b81fe57d4a633ea4341e096ac7ad6374baeb8))
+* resolve platform-specific test failures ([722f0a9](https://github.com/loonghao/PyRustor/commit/722f0a94ac34e8591a88b5088fa80382c8cac7fd))
+* resolve PR and release version inconsistency issues ([2688aa6](https://github.com/loonghao/PyRustor/commit/2688aa6804e535288b812499ca42de70f5de6423))
+* unify CI environments across PR and release stages ([a9be491](https://github.com/loonghao/PyRustor/commit/a9be4910fb6b8d84f301a801cb500850058b2fa2))
+
 ## [0.1.5](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.4...pyrustor-v0.1.5) (2025-07-27)
 
 

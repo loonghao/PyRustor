@@ -11,13 +11,30 @@ permissions:
   contents: read
 
 jobs:
-  # Quick validation - runs on every PR
+  # Quick validation - runs on every PR with cross-platform testing
   quick-test:
-    name: Quick Test (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    name: Quick Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false  # Don't fail fast - we want to see all platform/Python version results
       matrix:
-        python-version: ["3.8", "3.10", "3.12"]  # Test min, stable, and recent stable
+        # Critical platform/Python combinations for PR testing
+        include:
+          # Ubuntu - test min, stable, and latest Python versions
+          - os: ubuntu-latest
+            python-version: "3.8"
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          # macOS - test Python 3.9 (known gettext issue) and stable version
+          - os: macos-latest
+            python-version: "3.9"
+          - os: macos-latest
+            python-version: "3.10"
+          # Windows - test stable version to catch Windows-specific issues
+          - os: windows-latest
+            python-version: "3.10"
     
     steps:
       - uses: actions/checkout@v4

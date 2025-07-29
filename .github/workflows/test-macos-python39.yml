@@ -1,0 +1,146 @@
+name: Test macOS Python 3.9 Gettext Fix
+
+# This workflow specifically tests the macOS Python 3.9 gettext dependency fix
+# It can be triggered manually or automatically when related files change
+
+on:
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug output'
+        required: false
+        default: 'false'
+        type: boolean
+  
+  # Auto-trigger when setup action or CI files change
+  push:
+    paths:
+      - '.github/actions/setup-pyrustor/**'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/test-macos-python39.yml'
+    branches: [main]
+  
+  pull_request:
+    paths:
+      - '.github/actions/setup-pyrustor/**'
+      - '.github/workflows/ci.yml'
+      - '.github/workflows/test-macos-python39.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-macos-python39:
+    name: Verify macOS Python 3.9 Gettext Fix
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment (Python 3.9)
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: "3.9"
+          rust-components: 'clippy'
+          cache-key-suffix: 'macos-python39-test'
+
+      - name: Verify Python 3.9 Installation
+        run: |
+          echo "🔍 Verifying Python 3.9 installation and gettext dependency..."
+          
+          # Check Python version
+          python3.9 --version
+          
+          # Check if Python can import basic modules (this would fail if gettext is missing)
+          python3.9 -c "import sys; print(f'Python executable: {sys.executable}')"
+          python3.9 -c "import locale; print(f'Locale support: OK')"
+          
+          # Verify gettext library exists
+          if [ -f "/usr/local/opt/gettext/lib/libintl.8.dylib" ]; then
+            echo "✅ gettext library found at expected location"
+            ls -la /usr/local/opt/gettext/lib/libintl.8.dylib
+          else
+            echo "❌ gettext library not found"
+            exit 1
+          fi
+          
+          # Test that Python can start without dyld errors
+          echo "🧪 Testing Python startup without errors..."
+          python3.9 -c "print('✅ Python 3.9 started successfully without gettext errors')"
+
+      - name: Build and Test PyRustor
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+          generate-stubs: 'true'
+
+      - name: Run Additional Verification Tests
+        run: |
+          echo "🧪 Running additional verification tests..."
+          
+          # Test that the built extension can be imported
+          python3.9 -c "
+          import sys
+          sys.path.insert(0, 'python')
+          try:
+              import pyrustor
+              print('✅ PyRustor imported successfully')
+              print(f'PyRustor version: {pyrustor.__version__}')
+          except ImportError as e:
+              print(f'❌ Failed to import PyRustor: {e}')
+              sys.exit(1)
+          "
+          
+          # Run a basic functionality test
+          python3.9 -c "
+          import sys
+          sys.path.insert(0, 'python')
+          import pyrustor
+          
+          # Test basic functionality
+          result = pyrustor.refactor_code('print(\"hello\")', [])
+          print(f'✅ Basic refactor test passed: {len(result)} characters')
+          "
+
+      - name: Debug Information
+        if: inputs.debug == 'true' || failure()
+        run: |
+          echo "🔍 Debug Information:"
+          echo "Python version: $(python3.9 --version)"
+          echo "Python executable: $(which python3.9)"
+          echo "System info: $(uname -a)"
+          echo "Homebrew gettext info:"
+          brew list gettext || echo "gettext not installed via brew"
+          echo "Library search paths:"
+          python3.9 -c "
+          import sys
+          print('Python sys.path:')
+          for path in sys.path:
+              print(f'  {path}')
+          "
+          echo "Environment variables:"
+          env | grep -E "(DYLD|PYTHON|PATH)" | sort
+
+      - name: Report Results
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "## ✅ macOS Python 3.9 Gettext Fix Verification Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The gettext dependency fix for Python 3.9 on macOS is working correctly:" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Python 3.9 starts without dyld errors" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ gettext library is properly installed and linked" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ PyRustor builds and imports successfully" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Basic functionality tests pass" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ macOS Python 3.9 Gettext Fix Verification Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The gettext dependency fix needs attention. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Common issues to check:" >> $GITHUB_STEP_SUMMARY
+            echo "- gettext installation via Homebrew" >> $GITHUB_STEP_SUMMARY
+            echo "- Symlink creation for libintl.8.dylib" >> $GITHUB_STEP_SUMMARY
+            echo "- Python 3.9 binary compatibility" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -46,7 +46,6 @@ runs:
         path: |
           ~/.cache/uv
           .venv
-          ~/.cache/pip
         key: ${{ runner.os }}-python-${{ inputs.python-version }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}-${{ inputs.cache-key-suffix }}
         restore-keys: |
           ${{ runner.os }}-python-${{ inputs.python-version }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}-

@@ -1,0 +1,248 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # Quick validation - runs on every PR with cross-platform testing
+  quick-test:
+    name: Quick Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false  # Don't fail fast - we want to see all platform/Python version results
+      matrix:
+        # Critical platform/Python combinations for PR testing
+        include:
+          # Ubuntu - test min, stable, and latest Python versions
+          - os: ubuntu-latest
+            python-version: "3.8"
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          # macOS - test stable and latest versions (avoid Python 3.9 gettext issues)
+          - os: macos-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.11"
+          # Windows - test stable version to catch Windows-specific issues
+          - os: windows-latest
+            python-version: "3.10"
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: ${{ matrix.python-version }}
+          rust-components: 'clippy'
+          cache-key-suffix: 'quick-test'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+          generate-stubs: 'true'
+
+  # Code quality and linting - runs on every PR
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: "3.10"
+          rust-components: 'rustfmt,clippy'
+          cache-key-suffix: 'lint'
+
+      - name: Check version consistency
+        id: version-check
+        run: just check-version
+        continue-on-error: true
+
+      - name: Version sync guidance
+        if: steps.version-check.outcome == 'failure'
+        run: |
+          echo "## ❌ Version Consistency Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The version numbers in your project files are not synchronized." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 How to fix:" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Automatic fix**: Go to Actions → Version Synchronization → Run workflow" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Manual fix**: Update version numbers in Cargo.toml and pyproject.toml to match" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Quick fix**: Add a comment \`/sync-version\` to this PR" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Files to check:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`Cargo.toml\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pyproject.toml\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`package.json\` (if exists)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **This step provides guidance only and won't fail the workflow**" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail on version inconsistency
+        if: steps.version-check.outcome == 'failure'
+        run: |
+          echo "❌ Version consistency check failed. Please fix the version mismatch."
+          echo "See the step summary above for detailed instructions."
+          exit 1
+
+      - name: Run linting and formatting checks
+        run: just ci-lint
+
+  # Comprehensive testing - runs on main branch and when requested
+  full-test:
+    name: Full Test Suite (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'full-ci') || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.10", "3.12"]
+        include:
+          # Test additional Python versions on Ubuntu only (avoid 3.9 due to gettext issues)
+          - os: ubuntu-latest
+            python-version: "3.11"
+          # Test Python 3.13 only on Ubuntu (most stable platform)
+          - os: ubuntu-latest
+            python-version: "3.13"
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache-key-suffix: 'full-test-${{ matrix.os }}'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'full'
+          upload-artifacts: 'true'
+          artifact-name: 'full-test-results-${{ matrix.os }}-py${{ matrix.python-version }}'
+
+  # Wheel testing - only for critical combinations
+  wheel-test:
+    name: Wheel Test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'test-wheels')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.10"]  # Test min and stable versions
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and Test Wheel
+        uses: ./.github/actions/build-wheel
+        with:
+          python-version: ${{ matrix.python-version }}
+          test-wheel: 'true'
+          upload-wheel: 'true'
+          artifact-name: 'test-wheels'
+
+  # Documentation tests - lightweight
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-docs-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-docs-
+            ${{ runner.os }}-cargo-
+
+      - name: Run doc tests
+        run: cargo test --doc
+
+      - name: Check documentation
+        run: cargo doc --no-deps --document-private-items
+
+  # Benchmark tests - only on main or when requested
+  benchmark:
+    name: Benchmark Tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'benchmark')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: "3.11"
+          cache-key-suffix: 'benchmark'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'benchmark'
+          upload-artifacts: 'true'
+          artifact-name: 'benchmark-results'
+
+  # Security checks - only on main or when requested
+  security:
+    name: Security & Quality
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'security-check')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: "3.11"
+          rust-components: 'clippy'
+          cache-key-suffix: 'security'
+
+      - name: Run security audit (Rust)
+        run: |
+          cargo install cargo-audit --force
+          cargo audit
+
+      - name: Run security checks (Python)
+        run: |
+          uv add --group dev safety bandit
+          uv run safety check --json --output safety-report.json || true
+          uv run bandit -r python/ -f json -o bandit-report.json || true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports-${{ github.run_id }}
+          path: |
+            safety-report.json
+            bandit-report.json
+          retention-days: 30

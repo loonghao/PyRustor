@@ -62,37 +62,6 @@ runs:
     - name: Install just
       uses: extractions/setup-just@v3
 
-    - name: Fix macOS Python 3.9 gettext dependency
-      if: runner.os == 'macOS' && inputs.python-version == '3.9'
-      shell: bash
-      run: |
-        echo "🔧 Installing gettext for Python 3.9 on macOS..."
-        # Install gettext via Homebrew
-        brew install gettext
-
-        # Create symlink to ensure Python can find the library
-        # The Python 3.9.23 binary expects libintl.8.dylib in /usr/local/opt/gettext/lib/
-        if [ ! -f "/usr/local/opt/gettext/lib/libintl.8.dylib" ]; then
-          echo "Creating symlink for libintl.8.dylib..."
-          sudo mkdir -p /usr/local/opt/gettext/lib
-          # Find the actual gettext installation
-          GETTEXT_LIB=$(brew --prefix gettext)/lib/libintl.8.dylib
-          if [ -f "$GETTEXT_LIB" ]; then
-            sudo ln -sf "$GETTEXT_LIB" /usr/local/opt/gettext/lib/libintl.8.dylib
-            echo "✅ Symlink created: /usr/local/opt/gettext/lib/libintl.8.dylib -> $GETTEXT_LIB"
-          else
-            echo "❌ Could not find gettext library at $GETTEXT_LIB"
-            exit 1
-          fi
-        else
-          echo "✅ libintl.8.dylib already exists"
-        fi
-
-        # Verify the fix
-        echo "🔍 Verifying Python 3.9 can start..."
-        python3.9 --version
-        echo "✅ Python 3.9 gettext dependency fixed"
-
     - name: Install dependencies
       if: inputs.install-dependencies == 'true'
       shell: bash

@@ -1,0 +1,145 @@
+name: PR Checks
+
+# This workflow runs comprehensive checks on PRs to ensure quality before merging.
+# It's designed to catch all issues that could cause release failures.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write # For commenting on PRs
+
+jobs:
+  # Critical pre-checks that must pass before any other work
+  pre-checks:
+    name: Pre-flight Checks
+    runs-on: ubuntu-latest
+    outputs:
+      version-consistent: ${{ steps.version.outputs.consistent }}
+      
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: "3.10"
+          cache-key-suffix: 'pre-checks'
+
+      - name: Version consistency check
+        id: version
+        run: |
+          echo "🔍 Checking version consistency..."
+          if just check-version; then
+            echo "consistent=true" >> $GITHUB_OUTPUT
+            echo "✅ All versions are synchronized" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "consistent=false" >> $GITHUB_OUTPUT
+            echo "## ❌ Version Consistency Check Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**This PR cannot be merged until versions are synchronized.**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 How to fix:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Run: \`just sync-version\`" >> $GITHUB_STEP_SUMMARY
+            echo "2. Or comment \`/sync-version\` on this PR" >> $GITHUB_STEP_SUMMARY
+            echo "3. Or manually update version numbers in:" >> $GITHUB_STEP_SUMMARY
+            echo "   - \`Cargo.toml\`" >> $GITHUB_STEP_SUMMARY
+            echo "   - \`python/pyrustor/__init__.py\`" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Basic syntax checks
+        run: |
+          echo "🔍 Running basic syntax checks..."
+          # Check Rust syntax
+          cargo check --workspace
+          # Check Python syntax
+          uv run python -m py_compile python/pyrustor/__init__.py
+
+  # Essential tests that must pass for PR approval
+  essential-tests:
+    name: Essential Tests
+    runs-on: ubuntu-latest
+    needs: pre-checks
+    strategy:
+      fail-fast: true  # Fail fast for essential tests
+      matrix:
+        python-version: ["3.8", "3.10", "3.12"]
+        
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: ${{ matrix.python-version }}
+          rust-components: 'clippy'
+          cache-key-suffix: 'essential-test'
+
+      - name: Build and Test
+        uses: ./.github/actions/build-and-test
+        with:
+          test-type: 'basic'
+          generate-stubs: 'true'
+
+  # Code quality checks
+  quality-checks:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    needs: pre-checks
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: "3.10"
+          rust-components: 'rustfmt,clippy'
+          cache-key-suffix: 'quality'
+
+      - name: Run linting and formatting checks
+        run: just ci-lint
+
+  # PR approval gate - all essential checks must pass
+  pr-ready:
+    name: PR Ready for Merge
+    runs-on: ubuntu-latest
+    needs: [pre-checks, essential-tests, quality-checks]
+    if: always()
+    
+    steps:
+      - name: Check all required jobs
+        run: |
+          echo "🔍 Checking PR readiness..."
+          
+          # Check pre-checks
+          if [[ "${{ needs.pre-checks.result }}" != "success" ]]; then
+            echo "❌ Pre-flight checks failed"
+            exit 1
+          fi
+          
+          # Check essential tests
+          if [[ "${{ needs.essential-tests.result }}" != "success" ]]; then
+            echo "❌ Essential tests failed"
+            exit 1
+          fi
+          
+          # Check quality
+          if [[ "${{ needs.quality-checks.result }}" != "success" ]]; then
+            echo "❌ Code quality checks failed"
+            exit 1
+          fi
+          
+          echo "✅ PR is ready for merge!"
+          echo "## ✅ PR Ready for Merge" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All essential checks have passed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Version consistency" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Essential tests (Python 3.8, 3.10, 3.12)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Code quality and linting" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This PR can be safely merged and released." >> $GITHUB_STEP_SUMMARY

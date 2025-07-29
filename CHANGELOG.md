@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.6...pyrustor-v0.1.7) (2025-07-29)
+
+
+### Features
+
+* add comprehensive test coverage to PR checks ([0069bf8](https://github.com/loonghao/PyRustor/commit/0069bf86e3113f76e56a5b999ab65967573c509b))
+* improve CI/CD pipeline to prevent release failures ([80e551e](https://github.com/loonghao/PyRustor/commit/80e551ed974e0c7b6df16b9391e817c10a02c63f))
+
+
+### Code Refactoring
+
+* optimize test coverage strategy for Rust-Python hybrid project ([9107890](https://github.com/loonghao/PyRustor/commit/91078908461a96a476e747e9f2ecf5e6aaf2864b))
+
 ## [0.1.6](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.5...pyrustor-v0.1.6) (2025-07-29)
 
 

@@ -60,24 +60,39 @@ runs:
       run: |
         case "${{ inputs.test-type }}" in
           "basic")
+            echo "🧪 Running basic import tests..."
             just ci-test-basic
             ;;
           "rust")
+            echo "🧪 Running Rust tests..."
             just ci-test-rust
             ;;
           "python")
+            echo "🧪 Running Python unit tests..."
             just ci-test-python
             ;;
           "benchmark")
+            echo "🧪 Running benchmark tests..."
             just ci-test-python-benchmark
             ;;
           "full")
+            echo "🧪 Running comprehensive test suite..."
+            echo "  → Rust tests..."
+            just ci-test-rust
+            echo "  → Python unit tests..."
+            just ci-test-python
+            echo "  → Basic functionality tests..."
+            just ci-test-basic
+            echo "✅ All tests completed"
+            ;;
+          "unit")
+            echo "🧪 Running unit tests only (fast)..."
             just ci-test-rust
             just ci-test-python
-            just ci-test-basic
             ;;
           *)
-            echo "Unknown test type: ${{ inputs.test-type }}"
+            echo "❌ Unknown test type: ${{ inputs.test-type }}"
+            echo "Available types: basic, rust, python, benchmark, full, unit"
             exit 1
             ;;
         esac

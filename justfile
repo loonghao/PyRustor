@@ -117,9 +117,12 @@ ci-test-rust:
     cargo test --workspace --exclude pyrustor-python
 
 ci-test-python:
-    @echo "🧪 Running Python tests..."
-    @echo "⚠️  Note: Some tests may fail due to incomplete code generation after refactoring"
-    -uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
+    @echo "🧪 Running Python unit tests..."
+    uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow" --maxfail=5
+
+ci-test-python-strict:
+    @echo "🧪 Running Python tests (strict mode - all must pass)..."
+    uv run python -m pytest tests/ -v --tb=short -m "not benchmark and not slow"
 
 ci-test-python-benchmark:
     @echo "🧪 Running Python benchmark tests..."
@@ -170,9 +173,18 @@ coverage-rust:
         cargo tarpaulin --out Html --out Xml --output-dir target/tarpaulin --workspace --exclude pyrustor-python; \
     fi
 
-# CI-specific coverage command that handles test failures gracefully
+# CI-specific coverage command for PR checks (strict)
 coverage-python-ci:
     @echo "📊 Running Python tests with coverage for CI..."
+    uv run pytest --cov=pyrustor --cov-report=html --cov-report=term-missing --cov-report=xml --tb=short --maxfail=10 -v
+    @echo "✅ Coverage report generated successfully"
+    @echo "📊 Coverage files:"
+    @echo "  - HTML: htmlcov/index.html"
+    @echo "  - XML: coverage.xml"
+
+# Coverage command that handles test failures gracefully (for development)
+coverage-python-dev:
+    @echo "📊 Running Python tests with coverage (development mode)..."
     @echo "⚠️  Note: Some tests may fail due to incomplete code generation after refactoring"
     @echo "📊 Generating coverage report even with test failures..."
     -uv run pytest --cov=pyrustor --cov-report=html --cov-report=term-missing --cov-report=xml --cov-report= --tb=no --maxfail=50 -q

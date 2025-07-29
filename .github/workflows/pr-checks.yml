@@ -61,17 +61,17 @@ jobs:
 
   # Essential tests that must pass for PR approval
   essential-tests:
-    name: Essential Tests
+    name: Essential Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     needs: pre-checks
     strategy:
-      fail-fast: true  # Fail fast for essential tests
+      fail-fast: false  # Don't fail fast - we want to see all Python version results
       matrix:
         python-version: ["3.8", "3.10", "3.12"]
-        
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
         with:
@@ -82,8 +82,107 @@ jobs:
       - name: Build and Test
         uses: ./.github/actions/build-and-test
         with:
-          test-type: 'basic'
+          test-type: 'full'  # Run full tests instead of just basic
           generate-stubs: 'true'
+          upload-artifacts: 'true'
+          artifact-name: 'essential-test-results-py${{ matrix.python-version }}'
+
+  # Test coverage check - critical for code quality
+  coverage-check:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    needs: pre-checks
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PyRustor Environment
+        uses: ./.github/actions/setup-pyrustor
+        with:
+          python-version: '3.11'
+          cache-key-suffix: 'coverage'
+
+      - name: Install coverage tools
+        run: just install-coverage-tools
+
+      - name: Build extension
+        run: just ci-build
+        env:
+          RUST_BACKTRACE: 1
+
+      - name: Generate type stubs
+        run: just ci-stubs
+
+      - name: Run Rust tests with coverage
+        run: just coverage-rust
+
+      - name: Run Python tests with coverage
+        run: just coverage-python-ci
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Check coverage thresholds
+        run: |
+          echo "🔍 Checking coverage thresholds..."
+
+          # Check if coverage.xml exists
+          if [ ! -f coverage.xml ]; then
+            echo "❌ Python coverage.xml not found"
+            exit 1
+          fi
+
+          # Extract coverage percentage from coverage.xml
+          COVERAGE=$(python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          coverage = float(root.attrib['line-rate']) * 100
+          print(f'{coverage:.1f}')
+          ")
+
+          echo "📊 Current Python coverage: ${COVERAGE}%"
+
+          # Set minimum coverage threshold
+          MIN_COVERAGE=70
+
+          if (( $(echo "$COVERAGE < $MIN_COVERAGE" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below minimum threshold ${MIN_COVERAGE}%"
+            echo "## ❌ Coverage Check Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Current coverage: **${COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+            echo "Required minimum: **${MIN_COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please add more tests to improve coverage." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ Coverage ${COVERAGE}% meets minimum threshold ${MIN_COVERAGE}%"
+            echo "## ✅ Coverage Check Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Current coverage: **${COVERAGE}%** ✅" >> $GITHUB_STEP_SUMMARY
+            echo "Required minimum: **${MIN_COVERAGE}%**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports-pr-${{ github.run_id }}
+          path: |
+            htmlcov/
+            target/tarpaulin/
+            coverage.xml
+            target/tarpaulin/cobertura.xml
+          retention-days: 7
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 80
+          MINIMUM_ORANGE: 70
+          COVERAGE_PATH: .
+          MERGE_COVERAGE_FILES: false
 
   # Code quality checks
   quality-checks:
@@ -108,38 +207,45 @@ jobs:
   pr-ready:
     name: PR Ready for Merge
     runs-on: ubuntu-latest
-    needs: [pre-checks, essential-tests, quality-checks]
+    needs: [pre-checks, essential-tests, coverage-check, quality-checks]
     if: always()
-    
+
     steps:
       - name: Check all required jobs
         run: |
           echo "🔍 Checking PR readiness..."
-          
+
           # Check pre-checks
           if [[ "${{ needs.pre-checks.result }}" != "success" ]]; then
             echo "❌ Pre-flight checks failed"
             exit 1
           fi
-          
+
           # Check essential tests
           if [[ "${{ needs.essential-tests.result }}" != "success" ]]; then
             echo "❌ Essential tests failed"
             exit 1
           fi
-          
+
+          # Check coverage
+          if [[ "${{ needs.coverage-check.result }}" != "success" ]]; then
+            echo "❌ Coverage check failed"
+            exit 1
+          fi
+
           # Check quality
           if [[ "${{ needs.quality-checks.result }}" != "success" ]]; then
             echo "❌ Code quality checks failed"
             exit 1
           fi
-          
+
           echo "✅ PR is ready for merge!"
           echo "## ✅ PR Ready for Merge" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "All essential checks have passed:" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Version consistency" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Essential tests (Python 3.8, 3.10, 3.12)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Test coverage (≥70%)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Code quality and linting" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "This PR can be safely merged and released." >> $GITHUB_STEP_SUMMARY

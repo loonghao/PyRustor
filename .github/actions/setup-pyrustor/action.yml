@@ -34,6 +34,16 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Fix macOS dependencies for Python 3.9
+      if: runner.os == 'macOS' && startsWith(inputs.python-version, '3.9')
+      shell: bash
+      run: |
+        echo "🔧 Installing gettext for Python 3.9 on macOS..."
+        brew install gettext
+        # Create symlink to ensure Python can find the library
+        sudo ln -sf /opt/homebrew/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib 2>/dev/null || true
+        sudo ln -sf /usr/local/opt/gettext/lib/libintl.8.dylib /usr/local/lib/libintl.8.dylib 2>/dev/null || true
+
     - name: Setup Python
       id: setup-python
       uses: actions/setup-python@v5

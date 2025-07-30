@@ -91,6 +91,9 @@ runs:
         # Activate environment and install wheel
         if [ "${{ runner.os }}" = "Windows" ]; then
           source test-wheel-env/Scripts/activate
+          # Set Windows-specific environment variables
+          export PYTHONPATH=""
+          export PIP_DISABLE_PIP_VERSION_CHECK=1
         else
           source test-wheel-env/bin/activate
         fi
@@ -140,7 +143,26 @@ runs:
           echo "Wheel file: $wheel_file"
           echo "System architecture: $system_arch"
           echo "This may be expected for cross-platform builds"
-          exit 0
+
+          # Try alternative installation methods for Windows
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            echo "🔄 Trying alternative installation method for Windows..."
+            # Try with --force-reinstall and --no-build-isolation
+            if pip install "$wheel_file" --force-reinstall --no-build-isolation --disable-pip-version-check; then
+              echo "✅ Alternative Windows installation successful"
+            else
+              echo "🔄 Trying with --user flag..."
+              if pip install "$wheel_file" --user --force-reinstall --disable-pip-version-check; then
+                echo "✅ Windows user installation successful"
+              else
+                echo "⚠️ Windows wheel installation failed - this may be expected for cross-compilation"
+                echo "Continuing with build verification only..."
+                exit 0
+              fi
+            fi
+          else
+            exit 0
+          fi
         fi
 
         # Test basic functionality
@@ -185,6 +207,6 @@ runs:
       if: inputs.upload-wheel == 'true'
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.artifact-name }}-${{ runner.os }}-${{ inputs.target || 'default' }}
+        name: ${{ inputs.artifact-name }}-${{ runner.os }}-py${{ inputs.python-version }}-${{ inputs.target || 'default' }}
         path: dist/
         retention-days: 30

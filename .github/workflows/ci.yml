@@ -122,10 +122,10 @@ jobs:
           # Test Python 3.13 only on Ubuntu (most stable platform)
           - os: ubuntu-latest
             python-version: "3.13"
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
         with:

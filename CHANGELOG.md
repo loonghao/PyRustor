@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.7...pyrustor-v0.1.8) (2025-07-30)
+
+
+### Features
+
+* simplify CI configuration for better PR-Release consistency ([52c5ce3](https://github.com/loonghao/PyRustor/commit/52c5ce3f8e4f4919eae7d3e2dcf82239dc23f14c))
+
+
+### Bug Fixes
+
+* resolve Windows wheel compatibility and artifact naming conflicts ([8cf3f8e](https://github.com/loonghao/PyRustor/commit/8cf3f8eeddd6d308b910557eb9566418bf139495))
+
 ## [0.1.7](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.6...pyrustor-v0.1.7) (2025-07-29)
 
 

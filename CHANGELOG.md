@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.10...pyrustor-v0.1.11) (2025-07-31)
+
+
+### Bug Fixes
+
+* resolve macOS Python gettext dependency issues in release workflows ([a3b07d6](https://github.com/loonghao/PyRustor/commit/a3b07d6d845a22e7460fbea2332d6b78a50f6a99))
+
 ## [0.1.10](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.9...pyrustor-v0.1.10) (2025-07-31)
 
 

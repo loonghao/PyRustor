@@ -121,7 +121,7 @@ jobs:
           python -m zipfile -l dist/*.whl
 
       - name: Install built wheel and run tests
-        if: matrix.target == 'x86_64'
+        if: matrix.target == 'aarch64'  # Only test on native architecture
         run: |
           pip install pyrustor --find-links dist --force-reinstall
           python scripts/test_wheel_integrity.py

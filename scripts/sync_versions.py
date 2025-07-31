@@ -41,8 +41,8 @@ def get_cargo_version():
     with open(cargo_path) as f:
         content = f.read()
     
-    # Find workspace.package.version
-    match = re.search(r'\[workspace\.package\]\s*\nversion\s*=\s*"([^"]+)"', content)
+    # Find workspace.package.version - allow for content between [workspace.package] and version
+    match = re.search(r'\[workspace\.package\].*?version\s*=\s*"([^"]+)"', content, re.DOTALL)
     if not match:
         raise ValueError("Could not find workspace.package.version in Cargo.toml")
     
@@ -73,11 +73,12 @@ def update_cargo_version(new_version):
     with open(cargo_path) as f:
         content = f.read()
     
-    # Replace workspace.package.version
+    # Replace workspace.package.version - allow for content between [workspace.package] and version
     new_content = re.sub(
-        r'(\[workspace\.package\]\s*\nversion\s*=\s*)"[^"]+"',
+        r'(\[workspace\.package\].*?version\s*=\s*)"[^"]+"',
         rf'\1"{new_version}"',
-        content
+        content,
+        flags=re.DOTALL
     )
     
     if new_content == content:

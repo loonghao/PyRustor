@@ -38,8 +38,15 @@ runs:
         
         # Function to extract version from Cargo.toml
         get_cargo_version() {
-          # Extract version from [workspace.package] section
-          awk '/^\[workspace\.package\]/{flag=1; next} /^\[/{flag=0} flag && /^version/{match($0, /"([^"]*)"/, arr); print arr[1]; exit}' Cargo.toml
+          # Extract version from [workspace.package] section using Python script
+          if command -v python3 &> /dev/null; then
+            python3 .github/actions/sync-versions/extract_version.py
+          elif command -v python &> /dev/null; then
+            python .github/actions/sync-versions/extract_version.py
+          else
+            # Fallback to sed/grep approach
+            grep -A 5 '^\[workspace\.package\]' Cargo.toml | grep '^version' | head -1 | sed 's/.*"\([^"]*\)".*/\1/'
+          fi
         }
         
         # Function to extract version from Python package __init__.py
@@ -148,7 +155,7 @@ runs:
       run: |
         echo "🔍 Verifying version synchronization..."
         
-        CARGO_VERSION=$(awk '/^\[workspace\.package\]/{flag=1; next} /^\[/{flag=0} flag && /^version/{match($0, /"([^"]*)"/, arr); print arr[1]; exit}' Cargo.toml)
+        CARGO_VERSION=$(get_cargo_version)
         PYTHON_VERSION=$(grep '__version__ = ' python/pyrustor/__init__.py | head -1 | sed 's/__version__ = "\(.*\)"/\1/')
 
         echo "Final versions:"

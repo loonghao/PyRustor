@@ -54,8 +54,8 @@ jobs:
       - name: Basic syntax checks
         run: |
           echo "🔍 Running basic syntax checks..."
-          # Check Rust syntax
-          cargo check --workspace
+          # Check Rust syntax (with Python environment for PyO3)
+          uv run --with maturin cargo check --workspace
           # Check Python syntax
           uv run python -m py_compile python/pyrustor/__init__.py
 

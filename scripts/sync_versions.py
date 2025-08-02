@@ -9,7 +9,7 @@ It updates:
 
 Usage:
     python scripts/sync_versions.py [--check-only]
-    
+
     --check-only: Only check if versions are synchronized, don't update
 """
 

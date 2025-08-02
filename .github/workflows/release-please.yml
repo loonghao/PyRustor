@@ -36,3 +36,6 @@ jobs:
       id-token: write
       attestations: write
       actions: write
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pyrustor

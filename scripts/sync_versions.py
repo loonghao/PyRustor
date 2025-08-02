@@ -25,11 +25,27 @@ def get_release_please_version():
     manifest_path = Path(".release-please-manifest.json")
     if not manifest_path.exists():
         raise FileNotFoundError("Release-please manifest not found")
-    
+
     with open(manifest_path) as f:
         manifest = json.load(f)
-    
+
     return manifest["."]
+
+
+def update_release_please_version(new_version):
+    """Update version in release-please manifest."""
+    manifest_path = Path(".release-please-manifest.json")
+
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+
+    manifest["."] = new_version
+
+    with open(manifest_path, 'w') as f:
+        json.dump(manifest, f, indent=2)
+        f.write('\n')  # Add trailing newline
+
+    print(f"✅ Updated release-please manifest version to {new_version}")
 
 
 def get_cargo_version():
@@ -119,19 +135,20 @@ def check_versions():
         release_version = get_release_please_version()
         cargo_version = get_cargo_version()
         python_version = get_python_version()
-        
+
         print(f"📋 Version Status:")
         print(f"  Release-please: {release_version}")
         print(f"  Cargo.toml:     {cargo_version}")
         print(f"  Python package: {python_version}")
-        
+
         if release_version == cargo_version == python_version:
             print(f"✅ All versions are synchronized: {release_version}")
             return True, release_version
         else:
             print("❌ Version mismatch detected!")
+            print("💡 Note: release-please will auto-update versions on next release")
             return False, release_version
-            
+
     except Exception as e:
         print(f"❌ Error checking versions: {e}")
         return False, None

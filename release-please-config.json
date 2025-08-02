@@ -20,7 +20,15 @@
         {
           "type": "generic",
           "path": "python/pyrustor/__init__.py",
-          "glob": true
+          "glob": false,
+          "replacements": [
+            {
+              "type": "string",
+              "files": ["python/pyrustor/__init__.py"],
+              "replace": "__version__ = \"{{version}}\"",
+              "search": "__version__ = \".*\""
+            }
+          ]
         }
       ]
     }

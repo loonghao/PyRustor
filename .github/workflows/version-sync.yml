@@ -157,13 +157,18 @@ jobs:
         run: |
           echo "## Version Sync Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.check-versions.outputs.needs-sync }}" = "true" ]; then
             echo "❌ **Version inconsistency detected**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Target version: \`${{ needs.check-versions.outputs.current-version }}\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            
+            echo "💡 **Auto Version Management Info:**" >> $GITHUB_STEP_SUMMARY
+            echo "- release-please will automatically update versions on next release" >> $GITHUB_STEP_SUMMARY
+            echo "- Use conventional commits (feat:, fix:) for automatic version bumping" >> $GITHUB_STEP_SUMMARY
+            echo "- Check for release-please PR in pull requests" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
             if [ "${{ needs.sync-versions.result }}" = "success" ]; then
               echo "✅ **Versions have been synchronized**" >> $GITHUB_STEP_SUMMARY
             else
@@ -175,4 +180,8 @@ jobs:
             echo "✅ **All versions are consistent**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Current version: \`${{ needs.check-versions.outputs.current-version }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🚀 **Ready for auto version management!**" >> $GITHUB_STEP_SUMMARY
+            echo "- Use conventional commits for automatic version bumping" >> $GITHUB_STEP_SUMMARY
+            echo "- release-please will handle version updates automatically" >> $GITHUB_STEP_SUMMARY
           fi

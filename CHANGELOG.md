@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.12...pyrustor-v0.1.13) (2025-08-02)
+
+
+### Features
+
+* implement automatic version management with release-please ([42b0064](https://github.com/loonghao/PyRustor/commit/42b0064670cee9c1c33f879b207fb76325b31097))
+* improve version extraction with Python script and fallback ([7bf7ee9](https://github.com/loonghao/PyRustor/commit/7bf7ee925a351ed9564a7efb73b8981eb272a86b))
+
+
+### Bug Fixes
+
+* resolve CI pre-flight checks by ensuring Python environment for PyO3 ([e4389e7](https://github.com/loonghao/PyRustor/commit/e4389e7ca61baa3e65d3df1209c52632bbf5cf2d))
+* resolve sed regex backreference issue in version sync action ([0b12418](https://github.com/loonghao/PyRustor/commit/0b124188275c572f47812f33014c17be88b7847e))
+* sync Python package version to 0.1.11 for consistency ([7bb957c](https://github.com/loonghao/PyRustor/commit/7bb957c26833a45fee869a8de65e21f3c56e6c12))
+* synchronize Python package version to 0.1.12 ([299d8c1](https://github.com/loonghao/PyRustor/commit/299d8c13997e4a34b4fcd5e58896473033a9f1e3))
+
+
+### Documentation
+
+* improve version sync script documentation ([3068301](https://github.com/loonghao/PyRustor/commit/3068301d49f5dfcba2550471b1690333dea303be))
+
 ## [0.1.12](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.11...pyrustor-v0.1.12) (2025-07-31)
 
 

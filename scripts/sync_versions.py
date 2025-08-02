@@ -184,7 +184,7 @@ def sync_versions():
 
 
 def main():
-    """Main function."""
+    """Main function for version synchronization."""
     parser = argparse.ArgumentParser(description="Synchronize PyRustor version files")
     parser.add_argument(
         "--check-only", 

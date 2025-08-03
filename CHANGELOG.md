@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.16](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.15...pyrustor-v0.1.16) (2025-08-03)
+
+
+### Bug Fixes
+
+* improve release-please configuration for Python version updates ([3b62f54](https://github.com/loonghao/PyRustor/commit/3b62f543c690836cdc311984ef178edfdc992c6c))
+* update version to 0.1.15 and configure PyPI environment for trusted publishing ([b88366a](https://github.com/loonghao/PyRustor/commit/b88366ada63664d3a4df9e396187f26a6c45af44))
+
+
+### Code Refactoring
+
+* merge release-please.yml into release.yml to fix PyPI trusted publisher ([30fb567](https://github.com/loonghao/PyRustor/commit/30fb567619872de6f31a9cfe64bc132560414cc0))
+
 ## [0.1.15](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.14...pyrustor-v0.1.15) (2025-08-03)
 
 

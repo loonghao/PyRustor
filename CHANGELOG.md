@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.17](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.16...pyrustor-v0.1.17) (2025-08-03)
+
+
+### Bug Fixes
+
+* correct release-please extra-files regex configuration ([cc08efd](https://github.com/loonghao/PyRustor/commit/cc08efd4998a8754799aa54265d33e7ca618aea5))
+* resolve version sync and LICENSE file issues ([de5c596](https://github.com/loonghao/PyRustor/commit/de5c5967f9923db1482f476428262a43cfe6038e))
+
 ## [0.1.16](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.15...pyrustor-v0.1.16) (2025-08-03)
 
 

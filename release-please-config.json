@@ -20,12 +20,11 @@
         {
           "type": "generic",
           "path": "python/pyrustor/__init__.py",
-          "glob": false,
           "replacements": [
             {
               "type": "string",
-              "replace": "__version__ = \"{{version}}\"",
-              "search": "__version__ = \".*\""
+              "search": "__version__ = \".*\"",
+              "replace": "__version__ = \"{{version}}\""
             }
           ]
         }

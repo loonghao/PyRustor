@@ -34,6 +34,31 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Enable debug logging
+          ACTIONS_STEP_DEBUG: true
+          ACTIONS_RUNNER_DEBUG: true
+
+      - name: Debug release-please outputs
+        run: |
+          echo "Release created: ${{ steps.release.outputs.release_created }}"
+          echo "Tag name: ${{ steps.release.outputs.tag_name }}"
+          echo "Releases created: ${{ steps.release.outputs.releases_created }}"
+          echo "PR number: ${{ steps.release.outputs.pr }}"
+          echo "All outputs:"
+          echo '${{ toJSON(steps.release.outputs) }}'
+
+      - name: Debug configuration files
+        run: |
+          echo "=== Release Please Config ==="
+          cat release-please-config.json
+          echo ""
+          echo "=== Release Please Manifest ==="
+          cat .release-please-manifest.json
+          echo ""
+          echo "=== Current __init__.py version ==="
+          grep "__version__" python/pyrustor/__init__.py || echo "Version not found"
 
   # Call the build workflow to build standard wheels (only if release was created)
   build:

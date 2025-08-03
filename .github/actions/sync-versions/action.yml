@@ -154,19 +154,32 @@ runs:
       shell: bash
       run: |
         echo "🔍 Verifying version synchronization..."
-        
+
+        # Function to extract version from Cargo.toml
+        get_cargo_version() {
+          # Extract version from [workspace.package] section using Python script
+          if command -v python3 &> /dev/null; then
+            python3 .github/actions/sync-versions/extract_version.py
+          elif command -v python &> /dev/null; then
+            python .github/actions/sync-versions/extract_version.py
+          else
+            # Fallback to sed/grep approach
+            grep -A 5 '^\[workspace\.package\]' Cargo.toml | grep '^version' | head -1 | sed 's/.*"\([^"]*\)".*/\1/'
+          fi
+        }
+
         CARGO_VERSION=$(get_cargo_version)
         PYTHON_VERSION=$(grep '__version__ = ' python/pyrustor/__init__.py | head -1 | sed 's/__version__ = "\(.*\)"/\1/')
 
         echo "Final versions:"
         echo "  Cargo.toml: $CARGO_VERSION"
         echo "  Python package: $PYTHON_VERSION"
-        
+
         if [ -f "package.json" ]; then
           PACKAGE_VERSION=$(grep '"version":' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
           echo "  package.json: $PACKAGE_VERSION"
         fi
-        
+
         # Verify all versions match
         if [ "$CARGO_VERSION" = "$PYTHON_VERSION" ]; then
           echo "✅ All versions are now synchronized!"

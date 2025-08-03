@@ -8,7 +8,7 @@ description = "A high-performance Python code parsing and refactoring tool writt
 authors = [
     {name = "Hal", email = "hal.long@outlook.com"},
 ]
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -67,6 +67,7 @@ python-packages = ["pyrustor"]
 module-name = "pyrustor._pyrustor"
 bindings = "pyo3"
 manifest-path = "crates/pyrustor-python/Cargo.toml"
+include = ["LICENSE", "README.md", "README_zh.md"]
 
 [tool.ruff]
 line-length = 88

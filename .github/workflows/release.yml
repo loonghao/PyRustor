@@ -44,9 +44,6 @@ jobs:
       contents: write
       # Used to generate artifact attestation
       attestations: write
-    environment:
-      name: pypi
-      url: https://pypi.org/p/pyrustor
 
     steps:
       - name: Download all artifacts

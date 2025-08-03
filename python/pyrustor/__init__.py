@@ -12,6 +12,8 @@ Example:
     >>> refactor = pyrustor.Refactor(ast)
     >>> refactor.rename_function("hello", "greet")
     >>> print(refactor.get_code())
+
+Note: This version includes improved release-please configuration.
 """
 
 from ._pyrustor import (

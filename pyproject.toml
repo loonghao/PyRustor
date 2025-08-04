@@ -5,6 +5,7 @@ build-backend = "maturin"
 [project]
 name = "pyrustor"
 description = "A high-performance Python code parsing and refactoring tool written in Rust"
+readme = "README.md"
 authors = [
     {name = "Hal", email = "hal.long@outlook.com"},
 ]

@@ -12,6 +12,8 @@ Example:
     >>> refactor = pyrustor.Refactor(ast)
     >>> refactor.rename_function("hello", "greet")
     >>> print(refactor.get_code())
+
+Note: This version includes improved release-please configuration.
 """
 
 from ._pyrustor import (
@@ -26,7 +28,7 @@ from ._pyrustor import (
     CodeGenerator,
 )
 
-__version__ = "0.1.16"
+__version__ = "0.1.17"
 
 __all__ = [
     "Parser",

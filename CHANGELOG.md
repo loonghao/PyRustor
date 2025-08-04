@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.18](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.17...pyrustor-v0.1.18) (2025-08-04)
+
+
+### Features
+
+* improve release-please configuration documentation ([8dd4b24](https://github.com/loonghao/PyRustor/commit/8dd4b24b83bb83e4349848442fbf513f33b221c7))
+
+
+### Bug Fixes
+
+* add README.md to pyproject.toml for PyPI package description ([e10df92](https://github.com/loonghao/PyRustor/commit/e10df921cae00d554ec3fbb3ac4819b3a28265af))
+
 ## [0.1.17](https://github.com/loonghao/PyRustor/compare/pyrustor-v0.1.16...pyrustor-v0.1.17) (2025-08-03)
 
 

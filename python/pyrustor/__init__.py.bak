@@ -28,7 +28,7 @@ from ._pyrustor import (
     CodeGenerator,
 )
 
-__version__ = "0.1.17"
+__version__ = "0.1.18"
 
 __all__ = [
     "Parser",

@@ -26,7 +26,7 @@ jobs:
         python-version: ["3.8", "3.10", "3.12"]  # Test min, stable, and recent stable
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -49,7 +49,7 @@ jobs:
       version-consistent: ${{ steps.check.outputs.consistent }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -90,7 +90,7 @@ jobs:
     needs: version-check
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -124,7 +124,7 @@ jobs:
             python-version: "3.13"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -152,7 +152,7 @@ jobs:
         python-version: ["3.8", "3.10"]  # Test min and stable versions
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build and Test Wheel
         uses: ./.github/actions/build-wheel
@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -200,7 +200,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'benchmark')
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -223,7 +223,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'security-check')
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor

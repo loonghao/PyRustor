@@ -21,7 +21,7 @@ jobs:
       version-consistent: ${{ steps.version.outputs.consistent }}
       
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -70,7 +70,7 @@ jobs:
         python-version: ["3.8", "3.10", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -94,7 +94,7 @@ jobs:
     needs: pre-checks
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor
@@ -204,7 +204,7 @@ jobs:
     needs: pre-checks
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup PyRustor Environment
         uses: ./.github/actions/setup-pyrustor

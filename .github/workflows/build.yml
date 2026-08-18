@@ -57,7 +57,7 @@ jobs:
           artifact-name: 'wheels-linux-cross-${{ matrix.target }}'
 
       - name: Test cross-compiled wheel
-        uses: uraimo/run-on-arch-action@v3.0.1
+        uses: uraimo/run-on-arch-action@v3.2.0
         if: matrix.target != 'ppc64le'
         with:
           arch: ${{ matrix.target }}

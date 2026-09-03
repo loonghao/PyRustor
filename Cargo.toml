@@ -26,7 +26,7 @@ ruff_text_size = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5"
 ruff_source_file = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
 
 # Formatting dependencies - using Ruff's formatter
-ruff_python_formatter = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
+ruff_python_formatter = { git = "https://github.com/astral-sh/ruff.git", tag = "0.16.6" }
 ruff_formatter = { git = "https://github.com/astral-sh/ruff.git", tag = "0.12.5" }
 
 # Python bindings

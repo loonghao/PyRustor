@@ -182,3 +182,7 @@ Desktop.ini
 .ruff_cache/
 .augment/
 
+
+# Generated at the repo root by scripts/quality_check.py and scripts/performance_test.py (PIP-3735)
+/coverage.json
+/performance_results.json

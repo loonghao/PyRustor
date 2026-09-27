@@ -182,3 +182,7 @@ Desktop.ini
 .ruff_cache/
 .augment/
 
+
+# Test / benchmark artifacts accidentally committed to the repo root
+coverage.json
+performance_results.json
